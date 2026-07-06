@@ -55,7 +55,7 @@ interface GoalBarProps {
 }
 
 export type MainGoal =
-  | { kind: "money"; targetCategory: number; cost: number }
+  | { kind: "money"; targetCategory: number; categoryName: string; cost: number }
   | { kind: "final"; done: number; total: number; ready: boolean };
 
 export function GoalBar({ soft, goal, opening, onClaim }: GoalBarProps) {
@@ -96,11 +96,11 @@ export function GoalBar({ soft, goal, opening, onClaim }: GoalBarProps) {
       <div className="goal-row">
         <div className="section-title">
           <Goal size={17} />
-          Собери бюджет ${formatMoney(goal.cost)}
+          Открой зал «{goal.categoryName}»
         </div>
         {showClaim && (
           <button className={`goal-claim ${ready ? "ready" : ""}`} disabled={!ready} onClick={onClaim}>
-            {opening ? "Открываем тип..." : "Выполнить"}
+            {opening ? "Открываем зал..." : "Открыть"}
           </button>
         )}
       </div>

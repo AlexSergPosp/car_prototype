@@ -69,7 +69,13 @@ export function App() {
   const finalGoalProgress = useMemo(() => finalQuestProgress(businesses), [businesses]);
   const currentGoal = useMemo<MainGoal | null>(() => {
     const unlockGoal = CATEGORY_UNLOCK_GOALS.find((goal) => goal.targetCategory === unlockedCategory + 1);
-    if (unlockGoal) return { ...unlockGoal, kind: "money" };
+    if (unlockGoal) {
+      return {
+        ...unlockGoal,
+        kind: "money",
+        categoryName: CATEGORIES[unlockGoal.targetCategory]?.name ?? "новый зал",
+      };
+    }
     return victoryShown ? null : { kind: "final", ...finalGoalProgress };
   }, [finalGoalProgress, unlockedCategory, victoryShown]);
   const autoEventUnlockHint = useMemo(() => {
