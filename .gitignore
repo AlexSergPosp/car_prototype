@@ -2,3 +2,6 @@ node_modules/
 dist/
 package-lock.json
 .codex/
+src/assets/cars/**/preview-contact-sheet*.png
+src/assets/cars/**/*-alpha-raw.png
+src/assets/cars/**/*-source-chroma.png

@@ -2,8 +2,9 @@
 
 Use these rules for every car stage asset.
 
-- Canvas: final PNG, 512x512 px, transparent background.
-- Generation background: flat solid #00ff00 chroma-key only, then remove the key to alpha.
+- Source canvas: PNG, 512x512 px, transparent background after chroma-key removal.
+- Production asset: optimized WebP, 512x512 px, transparent background.
+- Generation background: flat solid #00ff00 chroma-key only, then remove the key to alpha and convert the final stage art to WebP.
 - Camera: fixed front-left 3/4 view, slightly above wheel height, car centered.
 - Framing: full vehicle visible, generous transparent padding, no cropping.
 - Style: realistic product/game asset render, clean studio lighting, sharp body lines, mild reflections on paint and metal.
