@@ -1,14 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { AutoEvents, AutoEventSummary } from "./components/AutoEvents";
 import { BusinessList } from "./components/BusinessList";
 import { GoalBar, TopBar, type MainGoal } from "./components/Bars";
 import { DetailPanel } from "./components/DetailPanel";
 import { AdModal, LevelUnlockModal, ManagerModal, OfflineIncomeModal, VictoryModal } from "./components/Modals";
-import { Managers } from "./components/Managers";
 import { Tabs } from "./components/Tabs";
-import { AD_DURATION_SECONDS, AD_MOVIE_QUIZZES, AD_QUIZ_BONUS, CATEGORIES, CATEGORY_UNLOCK_GOALS, COLLECT_TIME, GEM_AD_REWARD, MANAGER_COOLDOWN_SECONDS, OPTIMIZATION_COSTS, PREMIUM_MANAGER_COST } from "./data";
-import { completeExpansion, createBusinesses, createManager, createPremiumManager, effectiveIncome, expansionDurationSeconds, expansionProgress, nextBusinessOpenCost, nextOptimizationCost, tickBusinesses, unlockDelaySeconds } from "./game";
+import { advanceAutoEvent, autoEventById, createAutoEventRun } from "./autoEvents";
+import { AD_AUTO_QUIZZES, AD_DURATION_SECONDS, AD_QUIZ_BONUS, AUTO_EVENT_UNLOCK_CATEGORY, CATEGORIES, CATEGORY_UNLOCK_GOALS, COLLECT_TIME, GEM_AD_REWARD, MANAGER_COOLDOWN_SECONDS, MAX_BUSINESS_TIER, OPTIMIZATION_COSTS, PREMIUM_MANAGER_COST } from "./data";
+import { completeExpansion, createBusinessPremiumManager, createBusinesses, createManager, effectiveIncome, expansionDurationSeconds, expansionProgress, nextBusinessOpenCost, nextOptimizationCost, tickBusinesses, unlockDelaySeconds } from "./game";
 import { advanceOffline, clearProgress, loadProgress, saveProgress, type GameSnapshot } from "./save";
-import type { ActiveAd, Business, ExpansionReward, Manager, OfflineIncome } from "./types";
+import type { ActiveAd, AutoEventReward, AutoEventRun, Business, ExpansionReward, Manager, OfflineIncome } from "./types";
 
 interface IncomeBurst {
   id: number;
@@ -16,6 +17,10 @@ interface IncomeBurst {
   amount: number;
   mode: "manual" | "auto";
 }
+
+const MONEY_CHEAT_CODE = "PPGWJHT";
+const CHEAT_TIME_MULTIPLIER = 10;
+const CHEAT_DURATION_SECONDS = 60;
 
 export function App() {
   const initialProgress = useMemo(() => loadProgress(), []);
@@ -25,22 +30,29 @@ export function App() {
   const [activeCategory, setActiveCategory] = useState(initialProgress.snapshot.activeCategory);
   const [unlockedCategory, setUnlockedCategory] = useState(initialProgress.snapshot.unlockedCategory);
   const [unlockingCategory, setUnlockingCategory] = useState<number | null>(null);
+  const [levelUnlockCategory, setLevelUnlockCategory] = useState<number | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(initialProgress.snapshot.selectedId);
   const [businessPageOpen, setBusinessPageOpen] = useState(initialProgress.snapshot.businessPageOpen);
+  const [autoEventsOpen, setAutoEventsOpen] = useState(false);
   const [managers, setManagers] = useState<Array<Manager | null>>(initialProgress.snapshot.managers);
   const [managerSeed, setManagerSeed] = useState(initialProgress.snapshot.managerSeed);
   const [managerCooldown, setManagerCooldown] = useState(initialProgress.snapshot.managerCooldown);
+  const [autoEventRun, setAutoEventRun] = useState<AutoEventRun | null>(initialProgress.snapshot.autoEventRun);
+  const [autoEventReward, setAutoEventReward] = useState<AutoEventReward | null>(initialProgress.snapshot.autoEventReward);
   const [assignBusinessId, setAssignBusinessId] = useState<number | null>(null);
   const [activeAd, setActiveAd] = useState<ActiveAd | null>(null);
   const [victoryShown, setVictoryShown] = useState(initialProgress.snapshot.victoryShown && finalQuestProgress(initialProgress.snapshot.businesses).ready);
   const [victoryOpen, setVictoryOpen] = useState(false);
   const [offlineIncome, setOfflineIncome] = useState<OfflineIncome | null>(initialProgress.offline);
   const [incomeBursts, setIncomeBursts] = useState<IncomeBurst[]>([]);
+  const [timeWarpRemaining, setTimeWarpRemaining] = useState(0);
   const burstId = useRef(0);
   const autoEffectClock = useRef(0);
   const adTimer = useRef<number | null>(null);
   const adReward = useRef<(() => void) | null>(null);
   const unlockTimer = useRef<number | null>(null);
+  const cheatBuffer = useRef("");
+  const timeWarpRemainingRef = useRef(0);
   const lastTickAt = useRef(performance.now());
   const pausedRef = useRef(false);
   const pausedAt = useRef<number | null>(null);
@@ -52,7 +64,7 @@ export function App() {
     () => businesses.reduce((sum, item) => sum + (item.manager ? effectiveIncome(item) : 0), 0),
     [businesses],
   );
-  const premiumPreview = useMemo(() => createPremiumManager(managerSeed), [managerSeed]);
+  const premiumPreview = useMemo(() => createBusinessPremiumManager(assignBusinessId ?? selectedId ?? 0), [assignBusinessId, selectedId]);
   const finalGoalProgress = useMemo(() => finalQuestProgress(businesses), [businesses]);
   const currentGoal = useMemo<MainGoal | null>(() => {
     const unlockGoal = CATEGORY_UNLOCK_GOALS.find((goal) => goal.targetCategory === unlockedCategory + 1);
@@ -60,14 +72,23 @@ export function App() {
     return victoryShown ? null : { kind: "final", ...finalGoalProgress };
   }, [finalGoalProgress, unlockedCategory, victoryShown]);
 
-  snapshotRef.current = { soft, hard, businesses, activeCategory, unlockedCategory, selectedId, businessPageOpen, managers, managerSeed, managerCooldown, victoryShown };
+  snapshotRef.current = { soft, hard, businesses, activeCategory, unlockedCategory, selectedId, businessPageOpen, managers, managerSeed, managerCooldown, autoEventRun, autoEventReward, victoryShown };
 
   useEffect(() => {
     const timer = window.setInterval(() => {
       const now = performance.now();
-      const dt = (now - lastTickAt.current) / 1000;
+      const realDt = (now - lastTickAt.current) / 1000;
       lastTickAt.current = now;
       if (pausedRef.current) return;
+      let dt = realDt;
+      const remainingBoost = timeWarpRemainingRef.current;
+      if (remainingBoost > 0) {
+        const boostedSeconds = Math.min(realDt, remainingBoost);
+        dt = realDt + boostedSeconds * (CHEAT_TIME_MULTIPLIER - 1);
+        const nextRemaining = Math.max(0, remainingBoost - realDt);
+        timeWarpRemainingRef.current = nextRemaining;
+        setTimeWarpRemaining(nextRemaining);
+      }
       setBusinesses((current) => {
         const result = tickBusinesses(current, dt);
         if (result.income > 0) setSoft((value) => value + result.income);
@@ -81,9 +102,30 @@ export function App() {
         }
         return result.businesses;
       });
+      setAutoEventRun((current) => {
+        if (!current) return current;
+        const result = advanceAutoEvent(current, dt);
+        if (result.reward) setAutoEventReward((reward) => reward ?? result.reward);
+        return result.run;
+      });
       setManagerCooldown((value) => Math.max(0, value - dt));
     }, 250);
     return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    const handleCheatInput = (event: KeyboardEvent) => {
+      if (event.altKey || event.ctrlKey || event.metaKey) return;
+      const key = event.key.toUpperCase();
+      if (!/^[A-Z]$/.test(key)) return;
+      cheatBuffer.current = `${cheatBuffer.current}${key}`.slice(-MONEY_CHEAT_CODE.length);
+      if (cheatBuffer.current !== MONEY_CHEAT_CODE) return;
+      cheatBuffer.current = "";
+      timeWarpRemainingRef.current = CHEAT_DURATION_SECONDS;
+      setTimeWarpRemaining(CHEAT_DURATION_SECONDS);
+    };
+    window.addEventListener("keydown", handleCheatInput);
+    return () => window.removeEventListener("keydown", handleCheatInput);
   }, []);
 
   useEffect(() => {
@@ -133,7 +175,7 @@ export function App() {
   function runAd(callback: () => void) {
     if (adTimer.current != null) window.clearInterval(adTimer.current);
     adReward.current = callback;
-    const quiz = AD_MOVIE_QUIZZES[Math.floor(Math.random() * AD_MOVIE_QUIZZES.length)];
+    const quiz = AD_AUTO_QUIZZES[Math.floor(Math.random() * AD_AUTO_QUIZZES.length)];
     setActiveAd({ seconds: AD_DURATION_SECONDS, quiz, phase: "watching", selectedAnswer: null, correct: null });
     let left = AD_DURATION_SECONDS;
     adTimer.current = window.setInterval(() => {
@@ -174,6 +216,8 @@ export function App() {
     setHard(result.snapshot.hard);
     setBusinesses(result.snapshot.businesses);
     setManagerCooldown(result.snapshot.managerCooldown);
+    setAutoEventRun(result.snapshot.autoEventRun);
+    setAutoEventReward(result.snapshot.autoEventReward);
     if (result.income > 0) {
       setOfflineIncome((current) => ({
         seconds: (current?.seconds ?? 0) + seconds,
@@ -204,6 +248,8 @@ export function App() {
     lastTickAt.current = performance.now();
     burstId.current = 0;
     autoEffectClock.current = 0;
+    cheatBuffer.current = "";
+    timeWarpRemainingRef.current = 0;
     claimedExpansionRewards.current.clear();
     setSoft(100);
     setHard(0);
@@ -211,14 +257,19 @@ export function App() {
     setActiveCategory(0);
     setUnlockedCategory(0);
     setUnlockingCategory(null);
+    setLevelUnlockCategory(null);
     setSelectedId(0);
     setBusinessPageOpen(false);
+    setAutoEventsOpen(false);
     setManagers([createManager(0), createManager(1), createManager(2)]);
     setManagerSeed(3);
     setManagerCooldown(MANAGER_COOLDOWN_SECONDS);
+    setAutoEventRun(null);
+    setAutoEventReward(null);
     setAssignBusinessId(null);
     setActiveAd(null);
     setOfflineIncome(null);
+    setTimeWarpRemaining(0);
     setVictoryShown(false);
     setVictoryOpen(false);
     setIncomeBursts([]);
@@ -244,13 +295,27 @@ export function App() {
     const business = businesses.find((item) => item.id === assignBusinessId);
     if (!business?.opened || business.manager) return;
     setHard((value) => value - PREMIUM_MANAGER_COST);
-    updateBusiness(assignBusinessId, (item) => ({ ...item, manager: createPremiumManager(managerSeed) }));
-    setManagerSeed((seed) => seed + 1);
+    updateBusiness(assignBusinessId, (item) => ({ ...item, manager: createBusinessPremiumManager(assignBusinessId) }));
     setAssignBusinessId(null);
   }
 
   function handleGemAd() {
     runAd(() => setHard((value) => value + GEM_AD_REWARD));
+  }
+
+  function handleStartAutoEvent(eventId: string, businessId: number) {
+    if (unlockedCategory < AUTO_EVENT_UNLOCK_CATEGORY || autoEventRun || autoEventReward) return;
+    const contest = autoEventById(eventId);
+    const business = businesses.find((item) => item.id === businessId);
+    if (!contest || !business?.opened) return;
+    setAutoEventRun(createAutoEventRun(business, contest, Date.now() + business.id * 97));
+  }
+
+  function handleClaimAutoEventReward() {
+    if (!autoEventReward) return;
+    setSoft((value) => value + autoEventReward.soft);
+    setHard((value) => value + autoEventReward.hard);
+    setAutoEventReward(null);
   }
 
   function handleClaimGoal() {
@@ -266,6 +331,7 @@ export function App() {
     const firstBusinessId = businesses.find((item) => item.catIdx === targetCategory)?.id ?? null;
     setSoft((value) => value - currentGoal.cost);
     setUnlockingCategory(targetCategory);
+    setLevelUnlockCategory(targetCategory);
     if (unlockTimer.current != null) window.clearTimeout(unlockTimer.current);
     unlockTimer.current = window.setTimeout(() => {
       setBusinesses((current) => current.map((item) => (
@@ -424,19 +490,41 @@ export function App() {
     runAd(() => updateBusiness(id, (item) => ({ ...item, unlockRemaining: 0 })));
   }
 
-  const screenKey = businessPageOpen ? `detail-${selectedId ?? "none"}` : `main-${activeCategory}`;
+  function openAutoEventsScreen() {
+    if (unlockedCategory < AUTO_EVENT_UNLOCK_CATEGORY) return;
+    setBusinessPageOpen(false);
+    setAutoEventsOpen(true);
+  }
+
+  const screenKey = autoEventsOpen ? "auto-events" : businessPageOpen ? `detail-${selectedId ?? "none"}` : `main-${activeCategory}`;
 
   return (
     <main className="app-shell">
-      <TopBar soft={soft} hard={hard} totalAuto={totalAuto} onGemAd={handleGemAd} onReset={handleFullReset} />
-      {!businessPageOpen && <GoalBar soft={soft} goal={currentGoal} opening={unlockingCategory != null} onClaim={handleClaimGoal} />}
+      <TopBar soft={soft} hard={hard} totalAuto={totalAuto} timeWarpRemaining={timeWarpRemaining} onGemAd={handleGemAd} onReset={handleFullReset} />
+      {!businessPageOpen && !autoEventsOpen && <GoalBar soft={soft} goal={currentGoal} opening={unlockingCategory != null} onClaim={handleClaimGoal} />}
       <div className="content-scroll">
-        <div className={`screen-transition ${businessPageOpen ? "detail-screen-transition" : "main-screen-transition"}`} key={screenKey}>
-          {businessPageOpen ? (
+        <div className={`screen-transition ${businessPageOpen || autoEventsOpen ? "detail-screen-transition" : "main-screen-transition"}`} key={screenKey}>
+          {autoEventsOpen ? (
+            <AutoEvents
+              businesses={businesses}
+              unlocked={unlockedCategory >= AUTO_EVENT_UNLOCK_CATEGORY}
+              run={autoEventRun}
+              reward={autoEventReward}
+              onBack={() => setAutoEventsOpen(false)}
+              onStart={handleStartAutoEvent}
+              onClaim={handleClaimAutoEventReward}
+            />
+          ) : businessPageOpen ? (
             <DetailPanel business={selectedBusiness} soft={soft} hard={hard} onBack={() => setBusinessPageOpen(false)} onBuyEquipment={handleBuyEquipment} onStartAction={handleStartAction} onExpand={handleExpand} onSkipExpansion={handleSkipExpansion} onClaimExpansionReward={handleClaimExpansionReward} onOptimize={handleOptimizeBusiness} onOptimizeAd={handleOptimizeBusinessAd} onOpenAssign={setAssignBusinessId} onRemoveManager={(id) => updateBusiness(id, (item) => ({ ...item, manager: null }))} />
           ) : (
             <div className="main-sections">
-              <Managers managers={managers} premiumManager={premiumPreview} managerCooldown={managerCooldown} onSearch={handleSearchManager} onFire={(slot) => setManagers((current) => current.map((item, idx) => (idx === slot ? null : item)))} />
+              <AutoEventSummary
+                businesses={businesses}
+                unlocked={unlockedCategory >= AUTO_EVENT_UNLOCK_CATEGORY}
+                run={autoEventRun}
+                reward={autoEventReward}
+                onOpen={openAutoEventsScreen}
+              />
               <BusinessList
                 businesses={businesses}
                 activeCategory={activeCategory}
@@ -456,11 +544,11 @@ export function App() {
           )}
         </div>
       </div>
-      {!businessPageOpen && <Tabs active={activeCategory} unlocked={unlockedCategory} openingCategory={unlockingCategory} businesses={businesses} soft={soft} onChange={(index) => { if (index > unlockedCategory) return; setActiveCategory(index); setSelectedId(businesses.find((item) => item.catIdx === index)?.id ?? null); }} />}
+      {!businessPageOpen && !autoEventsOpen && <Tabs active={activeCategory} unlocked={unlockedCategory} openingCategory={unlockingCategory} businesses={businesses} soft={soft} onChange={(index) => { if (index > unlockedCategory) return; setActiveCategory(index); setSelectedId(businesses.find((item) => item.catIdx === index)?.id ?? null); }} />}
       <ManagerModal business={businesses.find((item) => item.id === assignBusinessId) ?? null} managers={managers} premiumManager={premiumPreview} hard={hard} managerCooldown={managerCooldown} open={assignBusinessId != null} onSearch={handleSearchManager} onPremiumHire={handleHirePremiumManager} onAssign={handleAssign} onFire={(slot) => setManagers((current) => current.map((item, idx) => (idx === slot ? null : item)))} onClose={() => setAssignBusinessId(null)} />
       <OfflineIncomeModal reward={offlineIncome} onClose={() => setOfflineIncome(null)} onDouble={handleDoubleOfflineIncome} />
       <AdModal ad={activeAd} onAnswer={handleAdAnswer} onCloseResult={handleCloseAdResult} />
-      <LevelUnlockModal name={unlockingCategory == null ? null : CATEGORIES[unlockingCategory]?.name ?? null} />
+      <LevelUnlockModal name={levelUnlockCategory == null ? null : CATEGORIES[levelUnlockCategory]?.name ?? null} onClose={() => setLevelUnlockCategory(null)} />
       <VictoryModal open={victoryOpen} onClose={() => setVictoryOpen(false)} />
     </main>
   );
@@ -470,7 +558,7 @@ function finalQuestProgress(businesses: Business[]) {
   const maxOptimization = OPTIMIZATION_COSTS.length;
   const done = businesses.reduce((sum, business) => (
     sum
-    + (business.opened && business.tier >= 4 ? 1 : 0)
+    + (business.opened && business.tier >= MAX_BUSINESS_TIER ? 1 : 0)
     + (business.opened && business.optimizationLevel >= maxOptimization ? 1 : 0)
   ), 0);
   const total = businesses.length * 2;

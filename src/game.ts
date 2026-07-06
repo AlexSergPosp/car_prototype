@@ -1,5 +1,5 @@
-import { CATEGORIES, COLLECT_TIME, EQUIPMENT_OPTIONS, EXPANSION_BALANCE, FACES, LONG_ACTION_OPTIONS, MANAGER_RARITY_STATS, OPTIMIZATION_BONUSES, OPTIMIZATION_COSTS, RARITIES, TIER_INCOME_MULTIPLIERS } from "./data";
-import type { Business, ExpansionRequirement, Manager } from "./types";
+import { CATEGORIES, COLLECT_TIME, EQUIPMENT_OPTIONS, EXPANSION_BALANCE, FACES, LONG_ACTION_OPTIONS, MANAGER_NAMES, MANAGER_RARITY_STATS, MAX_BUSINESS_TIER, OPTIMIZATION_BONUSES, OPTIMIZATION_COSTS, PREMIUM_MANAGER_BY_BUSINESS, RARITIES, TIER_INCOME_MULTIPLIERS } from "./data";
+import type { Business, EquipmentItem, ExpansionRequirement, Manager } from "./types";
 
 export function createBusinesses(): Business[] {
   let id = 0;
@@ -45,23 +45,42 @@ export function createPremiumManager(seed: number): Manager {
     ...manager,
     efficiency,
     salary,
-    desc: `Прем · эфф. ${Math.round(efficiency * 100)}% · зарпл. x${salary.toFixed(2)}`,
+    desc: `Прем-механик · эфф. ${Math.round(efficiency * 100)}% · оплата x${salary.toFixed(2)}`,
+  };
+}
+
+export function createBusinessPremiumManager(businessId: number): Manager {
+  const seed = 20_000 + businessId;
+  const manager = makeManager(seed, "orange");
+  const profile = PREMIUM_MANAGER_BY_BUSINESS[businessId] ?? PREMIUM_MANAGER_BY_BUSINESS[0];
+  const efficiency = round2(manager.efficiency + 0.42);
+  const salary = round2(manager.salary + 0.48);
+  return {
+    ...manager,
+    id: seed,
+    name: profile.name,
+    face: profile.face,
+    efficiency,
+    salary,
+    desc: `Прем под авто · эфф. ${Math.round(efficiency * 100)}% · оплата x${salary.toFixed(2)}`,
   };
 }
 
 function makeManager(seed: number, rarity: Manager["rarity"]): Manager {
   const face = FACES[seed % FACES.length];
+  const name = MANAGER_NAMES[seed % MANAGER_NAMES.length];
   const base = MANAGER_RARITY_STATS[rarity];
   const spread = ((seed * 17) % 9) / 100;
   const efficiency = round2(base.efficiency + spread);
   const salary = round2(base.salary + spread * 1.8);
   return {
     id: seed,
+    name,
     face,
     rarity,
     efficiency,
     salary,
-    desc: `Эфф. ${Math.round(efficiency * 100)}% · зарпл. x${salary.toFixed(2)}`,
+    desc: `Эфф. ${Math.round(efficiency * 100)}% · оплата x${salary.toFixed(2)}`,
   };
 }
 
@@ -80,7 +99,8 @@ export function effectiveIncome(business: Business): number {
 }
 
 export function managerSalary(business: Business, manager: Manager): number {
-  return business.minSalary * manager.salary;
+  const salaryShare = Math.min(0.58, Math.max(0.22, 0.14 + manager.salary * 0.115));
+  return baseIncome(business) * salaryShare;
 }
 
 export function tickBusinesses(businesses: Business[], dt: number): { businesses: Business[]; income: number; gems: number } {
@@ -92,6 +112,12 @@ export function tickBusinesses(businesses: Business[], dt: number): { businesses
         updated.unlockRemaining = Math.max(0, updated.unlockRemaining - dt);
       }
       return updated;
+    }
+    if (updated.tier >= MAX_BUSINESS_TIER && !updated.maxed) {
+      updated.maxed = true;
+      updated.requirements = [];
+      updated.expansionRemaining = 0;
+      updated.expansionDuration = 0;
     }
     if (!updated.maxed && updated.expansionRemaining <= 0) updated.workedSeconds += dt;
     if (updated.manager) income += effectiveIncome(updated) * dt;
@@ -115,11 +141,12 @@ export function tickBusinesses(businesses: Business[], dt: number): { businesses
 }
 
 export function completeExpansion(business: Business): Business {
-  if (business.maxed || business.tier >= 4) {
+  if (business.maxed || business.tier >= MAX_BUSINESS_TIER) {
     return { ...business, expansionRemaining: 0, expansionDuration: 0 };
   }
   const incomeBefore = effectiveIncome(business);
   const nextTier = business.tier + 1;
+  const reachedMaxTier = nextTier >= MAX_BUSINESS_TIER;
   const updated = {
     ...business,
     tier: nextTier,
@@ -128,8 +155,8 @@ export function completeExpansion(business: Business): Business {
     collectReady: false,
     expansionRemaining: 0,
     expansionDuration: 0,
-    requirements: createExpansionRequirements(business.id, business.catIdx, nextTier, business.base),
-    maxed: nextTier >= 4,
+    requirements: reachedMaxTier ? [] : createExpansionRequirements(business.id, business.catIdx, nextTier, business.base),
+    maxed: reachedMaxTier,
   };
   return {
     ...updated,
@@ -148,7 +175,7 @@ export function expansionConfig(business: Business) {
 }
 
 export function expansionProgress(business: Business) {
-  if (business.maxed || business.expansionRemaining > 0) return { done: business.requirements.length, total: business.requirements.length, ready: false };
+  if (business.maxed || business.tier >= MAX_BUSINESS_TIER || business.expansionRemaining > 0) return { done: business.requirements.length, total: business.requirements.length, ready: false };
   const done = business.requirements.filter((req) => isRequirementDone(business, req)).length;
   return { done, total: business.requirements.length, ready: done === business.requirements.length };
 }
@@ -231,13 +258,46 @@ function tickRequirement(req: ExpansionRequirement, dt: number): ExpansionRequir
 }
 
 function makeEquipmentRequirement(businessId: number, catIdx: number, tier: number, slot: number, difficulty: number): ExpansionRequirement {
-  const item = EQUIPMENT_OPTIONS[(businessId * 3 + catIdx * 5 + tier * 7 + slot * 11) % EQUIPMENT_OPTIONS.length];
+  const item = pickEquipmentItem(businessId, catIdx, tier, slot);
   const tierMultiplier = EXPANSION_BALANCE[Math.min(tier - 1, EXPANSION_BALANCE.length - 1)].costMultiplier;
   const levelCost = 1 + catIdx * 0.52 + (businessId % 4) * 0.12 + (tier - 1) * 0.32 + difficulty * 0.14;
   const earlyDiscount = catIdx === 0 && tier === 1 ? 0.45 : catIdx === 0 && tier === 2 ? 0.75 : 1;
   const unitCost = roundTo5(item.baseCost * tierMultiplier * levelCost * earlyDiscount);
   const quantity = Math.max(1, Math.round(1 + (tier - 1) * 0.9 + catIdx * 0.65 + slot * 0.25 + difficulty * 0.12));
   return { id: `eq-${tier}-${slot}`, type: "equipment", equipmentId: item.id, quantity, owned: 0, unitCost };
+}
+
+function pickEquipmentItem(businessId: number, catIdx: number, tier: number, slot: number): EquipmentItem {
+  const seed = businessId * 3 + catIdx * 5 + tier * 7 + slot * 11;
+  const pool = equipmentPoolFor(catIdx, tier);
+  return pool[seed % pool.length] ?? EQUIPMENT_OPTIONS[seed % EQUIPMENT_OPTIONS.length];
+}
+
+function equipmentPoolFor(catIdx: number, tier: number): EquipmentItem[] {
+  const minBaseCost = tier >= 3 ? 90 : tier === 2 ? 65 : 0;
+  const maxBaseCost = catIdx === 0 && tier === 1
+    ? 65
+    : tier === 1
+      ? 110 + catIdx * 15
+      : tier === 2
+        ? 150 + catIdx * 20
+        : Number.POSITIVE_INFINITY;
+
+  return EQUIPMENT_OPTIONS.filter((item) => item.baseCost >= minBaseCost && item.baseCost <= maxBaseCost);
+}
+
+export function normalizeExpansionRequirements(business: Pick<Business, "id" | "catIdx" | "tier" | "base">, requirements: ExpansionRequirement[]): ExpansionRequirement[] {
+  const canonical = createExpansionRequirements(business.id, business.catIdx, business.tier, business.base);
+  return requirements.map((req) => {
+    if (req.type !== "equipment") return req;
+    const currentItem = EQUIPMENT_OPTIONS.find((item) => item.id === req.equipmentId);
+    const nextReq = canonical.find((candidate): candidate is Extract<ExpansionRequirement, { type: "equipment" }> => candidate.id === req.id && candidate.type === "equipment");
+    if (!currentItem || !nextReq) return req;
+
+    const underpricedMajorPart = currentItem.baseCost >= 100 && req.unitCost < Math.max(45, currentItem.baseCost * 0.35);
+    const owned = req.owned >= req.quantity ? nextReq.quantity : Math.min(req.owned, nextReq.quantity);
+    return underpricedMajorPart ? { ...nextReq, owned } : req;
+  });
 }
 
 function makeActionRequirement(businessId: number, catIdx: number, tier: number, slot: number, difficulty: number): ExpansionRequirement {

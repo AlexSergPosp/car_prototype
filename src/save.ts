@@ -1,6 +1,7 @@
-import { MANAGER_COOLDOWN_SECONDS } from "./data";
-import { createBusinesses, createManager, createPremiumManager, tickBusinesses } from "./game";
-import type { Business, Manager, OfflineIncome } from "./types";
+import { MANAGER_COOLDOWN_SECONDS, MAX_BUSINESS_TIER, OPTIMIZATION_COSTS } from "./data";
+import { advanceAutoEvent, sanitizeAutoEventReward, sanitizeAutoEventRun } from "./autoEvents";
+import { createBusinessPremiumManager, createBusinesses, createManager, createPremiumManager, normalizeExpansionRequirements, tickBusinesses } from "./game";
+import type { AutoEventReward, AutoEventRun, Business, Manager, OfflineIncome } from "./types";
 
 const SAVE_KEY = "business-empire-save-v2";
 const OFFLINE_THRESHOLD_SECONDS = 10;
@@ -17,6 +18,8 @@ export interface GameSnapshot {
   managers: Array<Manager | null>;
   managerSeed: number;
   managerCooldown: number;
+  autoEventRun: AutoEventRun | null;
+  autoEventReward: AutoEventReward | null;
   victoryShown: boolean;
 }
 
@@ -36,6 +39,8 @@ export function defaultSnapshot(): GameSnapshot {
     managers: [createManager(0), createManager(1), createManager(2)],
     managerSeed: 3,
     managerCooldown: MANAGER_COOLDOWN_SECONDS,
+    autoEventRun: null,
+    autoEventReward: null,
     victoryShown: false,
   };
 }
@@ -55,6 +60,9 @@ export function loadProgress(now = Date.now()): { snapshot: GameSnapshot; offlin
 
 export function advanceOffline(snapshot: GameSnapshot, seconds: number): { snapshot: GameSnapshot; income: number } {
   const result = tickBusinesses(snapshot.businesses, seconds);
+  const eventResult = snapshot.autoEventReward
+    ? { run: null, reward: null }
+    : advanceAutoEvent(snapshot.autoEventRun, seconds);
   const income = result.income * OFFLINE_INCOME_MULTIPLIER;
   return {
     snapshot: {
@@ -63,6 +71,8 @@ export function advanceOffline(snapshot: GameSnapshot, seconds: number): { snaps
       hard: snapshot.hard + result.gems,
       businesses: result.businesses,
       managerCooldown: Math.max(0, snapshot.managerCooldown - seconds),
+      autoEventRun: eventResult.run,
+      autoEventReward: snapshot.autoEventReward ?? eventResult.reward,
     },
     income,
   };
@@ -99,10 +109,12 @@ function readStoredGame(): StoredGame | null {
 
 function sanitizeSnapshot(stored: StoredGame): GameSnapshot {
   const fallback = defaultSnapshot();
+  const businesses = mergeBusinesses(stored.businesses, fallback.businesses);
+  const autoEventReward = sanitizeAutoEventReward(stored.autoEventReward, businesses);
   return {
     soft: finiteOr(stored.soft, fallback.soft),
     hard: finiteOr(stored.hard, fallback.hard),
-    businesses: mergeBusinesses(stored.businesses, fallback.businesses),
+    businesses,
     activeCategory: clampInt(stored.activeCategory, 0, 4, fallback.activeCategory),
     unlockedCategory: clampInt(stored.unlockedCategory, 0, 4, fallback.unlockedCategory),
     selectedId: typeof stored.selectedId === "number" ? stored.selectedId : fallback.selectedId,
@@ -110,6 +122,8 @@ function sanitizeSnapshot(stored: StoredGame): GameSnapshot {
     managers: sanitizeManagers(stored.managers, fallback.managers),
     managerSeed: clampInt(stored.managerSeed, 0, 100000, fallback.managerSeed),
     managerCooldown: finiteOr(stored.managerCooldown, fallback.managerCooldown),
+    autoEventRun: autoEventReward ? null : sanitizeAutoEventRun(stored.autoEventRun, businesses),
+    autoEventReward,
     victoryShown: Boolean(stored.victoryShown),
   };
 }
@@ -119,22 +133,31 @@ function mergeBusinesses(saved: Business[] | undefined, fallback: Business[]): B
   return fallback.map((base) => {
     const item = saved.find((candidate) => candidate?.id === base.id);
     if (!item) return base;
+    const tier = clampInt(item.tier, 1, MAX_BUSINESS_TIER, base.tier);
+    const opened = Boolean(item.opened);
+    const maxed = Boolean(item.maxed) || tier >= MAX_BUSINESS_TIER;
+    const requirements = opened && !maxed && Array.isArray(item.requirements)
+      ? normalizeExpansionRequirements({ ...base, tier }, item.requirements)
+      : maxed ? [] : base.requirements;
+    const pendingExpansionReward = item.pendingExpansionReward && item.pendingExpansionReward.toTier <= MAX_BUSINESS_TIER
+      ? item.pendingExpansionReward
+      : null;
     return {
       ...base,
-      tier: clampInt(item.tier, 1, 4, base.tier),
-      opened: Boolean(item.opened),
+      tier,
+      opened,
       openCost: normalizeOpenCost(item, base),
       unlockRemaining: item.unlockRemaining == null ? null : Math.max(0, finiteOr(item.unlockRemaining, 0)),
       manager: sanitizeManager(item.manager),
       collectTimer: Math.max(0, finiteOr(item.collectTimer, base.collectTimer)),
       collectReady: Boolean(item.collectReady),
       workedSeconds: Math.max(0, finiteOr(item.workedSeconds, base.workedSeconds)),
-      requirements: item.opened && Array.isArray(item.requirements) ? item.requirements : base.requirements,
-      expansionRemaining: Math.max(0, finiteOr(item.expansionRemaining, base.expansionRemaining)),
-      expansionDuration: Math.max(0, finiteOr(item.expansionDuration, base.expansionDuration)),
-      optimizationLevel: clampInt(item.optimizationLevel, 0, 5, base.optimizationLevel),
-      pendingExpansionReward: item.pendingExpansionReward ?? null,
-      maxed: Boolean(item.maxed),
+      requirements,
+      expansionRemaining: maxed ? 0 : Math.max(0, finiteOr(item.expansionRemaining, base.expansionRemaining)),
+      expansionDuration: maxed ? 0 : Math.max(0, finiteOr(item.expansionDuration, base.expansionDuration)),
+      optimizationLevel: clampInt(item.optimizationLevel, 0, OPTIMIZATION_COSTS.length, base.optimizationLevel),
+      pendingExpansionReward,
+      maxed,
     };
   });
 }
@@ -146,6 +169,7 @@ function sanitizeManagers(managers: Array<Manager | null> | undefined, fallback:
 
 function sanitizeManager(manager: Manager | null | undefined): Manager | null {
   if (!manager || typeof manager.id !== "number") return null;
+  if (manager.id >= 20_000) return createBusinessPremiumManager(manager.id - 20_000);
   return manager.id >= 10_000 ? createPremiumManager(manager.id - 10_000) : createManager(manager.id);
 }
 

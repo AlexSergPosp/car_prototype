@@ -1,0 +1,75 @@
+import deloreanStage1 from "./assets/cars/delorean-time-machine/stage-1-v2.png";
+import deloreanStage2 from "./assets/cars/delorean-time-machine/stage-2-v2.png";
+import deloreanStage3 from "./assets/cars/delorean-time-machine/stage-3-v2.png";
+import astonStage1 from "./assets/cars/aston-martin-db5-bond/stage-1.png";
+import astonStage2 from "./assets/cars/aston-martin-db5-bond/stage-2.png";
+import astonStage3 from "./assets/cars/aston-martin-db5-bond/stage-3.png";
+import pontiacStage1 from "./assets/cars/pontiac-firebird-trans-am-kitt/stage-1.png";
+import pontiacStage2 from "./assets/cars/pontiac-firebird-trans-am-kitt/stage-2.png";
+import pontiacStage3 from "./assets/cars/pontiac-firebird-trans-am-kitt/stage-3.png";
+import chargerStage1 from "./assets/cars/dodge-charger-rt-dom/stage-1.png";
+import chargerStage2 from "./assets/cars/dodge-charger-rt-dom/stage-2.png";
+import chargerStage3 from "./assets/cars/dodge-charger-rt-dom/stage-3.png";
+import supraStage1 from "./assets/cars/toyota-supra-mk4-fast-furious/stage-1.png";
+import supraStage2 from "./assets/cars/toyota-supra-mk4-fast-furious/stage-2.png";
+import supraStage3 from "./assets/cars/toyota-supra-mk4-fast-furious/stage-3.png";
+import skylineStage1 from "./assets/cars/nissan-skyline-gtr-r34-v-spec/stage-1.png";
+import skylineStage2 from "./assets/cars/nissan-skyline-gtr-r34-v-spec/stage-2.png";
+import skylineStage3 from "./assets/cars/nissan-skyline-gtr-r34-v-spec/stage-3.png";
+import rx7Stage1 from "./assets/cars/mazda-rx7-veilside-fd/stage-1.png";
+import rx7Stage2 from "./assets/cars/mazda-rx7-veilside-fd/stage-2.png";
+import rx7Stage3 from "./assets/cars/mazda-rx7-veilside-fd/stage-3.png";
+import bmwStage1 from "./assets/cars/bmw-m3-gtr-most-wanted/stage-1.png";
+import bmwStage2 from "./assets/cars/bmw-m3-gtr-most-wanted/stage-2.png";
+import bmwStage3 from "./assets/cars/bmw-m3-gtr-most-wanted/stage-3.png";
+import fordGt40Stage1 from "./assets/cars/ford-gt40-mk-ii-le-mans/stage-1.png";
+import fordGt40Stage2 from "./assets/cars/ford-gt40-mk-ii-le-mans/stage-2.png";
+import fordGt40Stage3 from "./assets/cars/ford-gt40-mk-ii-le-mans/stage-3.png";
+import porsche917Stage1 from "./assets/cars/porsche-917k-gulf/stage-1.png";
+import porsche917Stage2 from "./assets/cars/porsche-917k-gulf/stage-2.png";
+import porsche917Stage3 from "./assets/cars/porsche-917k-gulf/stage-3.png";
+import type { Business } from "./types";
+import { vehicleConditionForTier } from "./vehicleConcept";
+
+interface CarArtSet {
+  stages: [string, string, string];
+}
+
+const CAR_ART_BY_ID: Record<number, CarArtSet> = {
+  0: {
+    stages: [deloreanStage1, deloreanStage2, deloreanStage3],
+  },
+  1: {
+    stages: [astonStage1, astonStage2, astonStage3],
+  },
+  2: {
+    stages: [pontiacStage1, pontiacStage2, pontiacStage3],
+  },
+  3: {
+    stages: [chargerStage1, chargerStage2, chargerStage3],
+  },
+  4: {
+    stages: [supraStage1, supraStage2, supraStage3],
+  },
+  5: {
+    stages: [skylineStage1, skylineStage2, skylineStage3],
+  },
+  6: {
+    stages: [rx7Stage1, rx7Stage2, rx7Stage3],
+  },
+  7: {
+    stages: [bmwStage1, bmwStage2, bmwStage3],
+  },
+  8: {
+    stages: [fordGt40Stage1, fordGt40Stage2, fordGt40Stage3],
+  },
+  9: {
+    stages: [porsche917Stage1, porsche917Stage2, porsche917Stage3],
+  },
+};
+
+export function carArtForBusiness(business: Pick<Business, "id" | "tier">): string | null {
+  const art = CAR_ART_BY_ID[business.id];
+  if (!art) return null;
+  return art.stages[vehicleConditionForTier(business.tier).stage - 1] ?? null;
+}

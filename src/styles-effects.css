@@ -201,6 +201,31 @@
   font-weight: 900;
 }
 
+.reward-history {
+  padding: 10px 11px;
+  border: 1px solid rgba(250, 204, 21, 0.34);
+  border-radius: 8px;
+  background: rgba(250, 204, 21, 0.09);
+  text-align: left;
+}
+
+.reward-history span {
+  display: block;
+  margin-bottom: 4px;
+  color: #fef3c7;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.reward-history p {
+  margin: 0;
+  color: #fde68a;
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
 .reward-income-flow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr);

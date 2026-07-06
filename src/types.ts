@@ -2,6 +2,7 @@ export type Rarity = "white" | "green" | "blue" | "purple" | "orange";
 
 export interface Manager {
   id: number;
+  name: string;
   face: string;
   rarity: Rarity;
   efficiency: number;
@@ -30,7 +31,7 @@ export interface LongActionItem {
   baseSeconds: number;
 }
 
-export interface AdMovieQuiz {
+export interface AdQuiz {
   id: string;
   title: string;
   hints: string[];
@@ -39,7 +40,7 @@ export interface AdMovieQuiz {
 
 export interface ActiveAd {
   seconds: number;
-  quiz: AdMovieQuiz;
+  quiz: AdQuiz;
   phase: "watching" | "quiz" | "result";
   selectedAnswer: string | null;
   correct: boolean | null;
@@ -48,6 +49,42 @@ export interface ActiveAd {
 export interface OfflineIncome {
   seconds: number;
   income: number;
+}
+
+export type VehicleStatKey = "speed" | "style" | "authenticity" | "engineering" | "media";
+
+export type VehicleStats = Record<VehicleStatKey, number>;
+
+export interface AutoEventContest {
+  id: string;
+  name: string;
+  icon: string;
+  description: string;
+  duration: number;
+  rewardSoft: number;
+  rewardHard: number;
+  weights: VehicleStats;
+  goals: string[];
+}
+
+export interface AutoEventRun {
+  eventId: string;
+  businessId: number;
+  remaining: number;
+  duration: number;
+  chance: number;
+  rewardSoft: number;
+  rewardHard: number;
+  seed: number;
+}
+
+export interface AutoEventReward {
+  eventId: string;
+  businessId: number;
+  success: boolean;
+  chance: number;
+  soft: number;
+  hard: number;
 }
 
 export type ExpansionRequirement =

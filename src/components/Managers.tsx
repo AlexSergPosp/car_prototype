@@ -2,7 +2,7 @@ import { Gem, Search, UserMinus } from "lucide-react";
 import { useState } from "react";
 import { PREMIUM_MANAGER_COST, RARITY_CLASS, RARITY_NAME } from "../data";
 import type { Manager } from "../types";
-import { managerEfficiencyClass } from "./managerUi";
+import { managerDisplayName, managerEfficiencyClass } from "./managerUi";
 
 interface ManagersProps {
   managers: Array<Manager | null>;
@@ -19,7 +19,7 @@ export function Managers({ managers, premiumManager, managerCooldown, onSearch, 
   return (
     <section className="panel">
       <div className="row-between mb-3">
-        <div className="section-title">Резерв менеджеров</div>
+        <div className="section-title">Бригада автомехаников</div>
       </div>
       <div className="manager-bench">
         {managers.map((manager, slot) => (
@@ -29,7 +29,7 @@ export function Managers({ managers, premiumManager, managerCooldown, onSearch, 
             ) : (
               <button className="empty-manager" onClick={() => onSearch(slot)}>
                 <Search size={22} />
-                <span>Искать</span>
+                <span>Найти</span>
                 <small>{hireLabel}</small>
               </button>
             )}
@@ -61,6 +61,7 @@ function ManagerCard({ manager, onInfo }: { manager: Manager; onInfo: () => void
   return (
     <button className="manager-card compact-manager-card" onClick={onInfo}>
       <div className={`portrait sm ${RARITY_CLASS[manager.rarity]}`}>{manager.face}</div>
+      <div className="manager-card-name">{managerDisplayName(manager)}</div>
       <strong className={managerEfficiencyClass(manager)}>{Math.round(manager.efficiency * 100)}%</strong>
       <small>x{manager.salary.toFixed(2)}</small>
     </button>
@@ -71,6 +72,7 @@ function PremiumManagerCard({ manager, label, onInfo }: { manager: Manager; labe
   return (
     <button className="manager-card compact-manager-card premium-manager-card" onClick={onInfo}>
       <div className={`portrait sm ${RARITY_CLASS[manager.rarity]}`}>{manager.face}</div>
+      <div className="manager-card-name">{managerDisplayName(manager)}</div>
       <strong className={managerEfficiencyClass(manager)}>{Math.round(manager.efficiency * 100)}%</strong>
       <small>{label}</small>
     </button>
@@ -79,27 +81,29 @@ function PremiumManagerCard({ manager, label, onInfo }: { manager: Manager; labe
 
 function ManagerBenchInfo({ info, onClose, onFire }: { info: { manager: Manager; slot: number | null; premium: boolean }; onClose: () => void; onFire: () => void }) {
   const { manager, premium } = info;
+  const name = managerDisplayName(manager);
   return (
     <div className="modal-overlay">
       <div className="modal-box manager-info-modal">
         <div className="row-between mb-4">
-          <h2>{premium ? "Прем менеджер" : `${RARITY_NAME[manager.rarity]} менеджер`}</h2>
+          <h2>{name}</h2>
           <button className="icon-quiet" onClick={onClose}>×</button>
         </div>
         <div className="manager-info-card">
           <div className={`portrait ${RARITY_CLASS[manager.rarity]}`}>{manager.face}</div>
           <div className="min-w-0">
+            <div className="text-sm font-black">{premium ? "Премиум-механик" : `${RARITY_NAME[manager.rarity]} автомеханик`}</div>
             <div className={`text-sm font-bold ${managerEfficiencyClass(manager)}`}>Эффективность {Math.round(manager.efficiency * 100)}%</div>
-            <div className="text-sm font-bold text-slate-500">Коэффициент зарплаты x{manager.salary.toFixed(2)}</div>
-            <div className="text-xs font-bold text-slate-600">Реальная зарплата зависит от бизнеса.</div>
+            <div className="text-sm font-bold text-slate-500">Коэффициент оплаты x{manager.salary.toFixed(2)}</div>
+            <div className="text-xs font-bold text-slate-600">Реальная оплата зависит от авто.</div>
           </div>
         </div>
         {!premium && (
           <button className="primary-button danger" onClick={onFire}>
-            <UserMinus size={18} /> Убрать из резерва
+            <UserMinus size={18} /> Убрать из бригады
           </button>
         )}
-        {premium && <div className="premium-note"><Gem size={16} /> Нанимается в окне выбора бизнеса за {PREMIUM_MANAGER_COST} 💎</div>}
+        {premium && <div className="premium-note"><Gem size={16} /> Нанимается в окне выбора авто за {PREMIUM_MANAGER_COST} 💎</div>}
       </div>
     </div>
   );

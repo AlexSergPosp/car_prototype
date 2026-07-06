@@ -4,8 +4,10 @@ import { App } from "./App";
 import "./styles.css";
 import "./styles-ui.css";
 import "./styles-effects.css";
+import "./styles-events.css";
 import "./styles-requirements.css";
 import "./styles-layout.css";
+import "./styles-light.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

@@ -13,7 +13,7 @@ interface TabsProps {
 
 export function Tabs({ active, unlocked, openingCategory, businesses, soft, onChange }: TabsProps) {
   return (
-    <nav className="tabs level-tabs" aria-label="Уровни бизнесов">
+    <nav className="tabs level-tabs" aria-label="Типы автомобилей">
       {CATEGORIES.map((category, index) => {
         const locked = index > unlocked;
         const opening = index === openingCategory;
@@ -21,7 +21,7 @@ export function Tabs({ active, unlocked, openingCategory, businesses, soft, onCh
         return (
           <button className={`tab ${active === index ? "active" : ""} ${locked ? "locked" : ""} ${opening ? "opening" : ""}`} disabled={locked} key={category.name} onClick={() => onChange(index)}>
             {notification.count > 0 && notification.tone && <span className={`tier-notification ${notification.tone}`}>{notification.count}</span>}
-            <span className="tab-level">Ур. {index + 1}</span>
+            <span className="tab-level">{category.name}</span>
             <span className="tab-stars">{locked ? "🔒" : category.icon}</span>
           </button>
         );

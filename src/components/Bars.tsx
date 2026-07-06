@@ -6,20 +6,22 @@ interface TopBarProps {
   soft: number;
   hard: number;
   totalAuto: number;
+  timeWarpRemaining: number;
   onGemAd: () => void;
   onReset: () => void;
 }
 
-export function TopBar({ soft, hard, totalAuto, onGemAd, onReset }: TopBarProps) {
+export function TopBar({ soft, hard, totalAuto, timeWarpRemaining, onGemAd, onReset }: TopBarProps) {
   return (
     <header className="top-bar">
       <div className="money-pill">
         <span className="coin">$</span>
         <span>{formatMoney(soft)}</span>
       </div>
-      <div className="income-pill">
-        <span>Доход</span>
+      <div className={`income-pill ${timeWarpRemaining > 0 ? "boosted" : ""}`}>
+        <span>Выручка</span>
         <strong>+${formatMoney(totalAuto)}/сек</strong>
+        {timeWarpRemaining > 0 && <em>x10 · {formatBoostTimer(timeWarpRemaining)}</em>}
       </div>
       <div className="top-actions">
         <div className="money-pill gem-pill">
@@ -38,6 +40,13 @@ export function TopBar({ soft, hard, totalAuto, onGemAd, onReset }: TopBarProps)
   );
 }
 
+function formatBoostTimer(seconds: number): string {
+  const total = Math.max(0, Math.ceil(seconds));
+  const minutes = Math.floor(total / 60);
+  const rest = String(total % 60).padStart(2, "0");
+  return `${minutes}:${rest}`;
+}
+
 interface GoalBarProps {
   soft: number;
   goal: MainGoal | null;
@@ -53,7 +62,7 @@ export function GoalBar({ soft, goal, opening, onClaim }: GoalBarProps) {
   if (!goal) {
     return (
       <section className="goal-panel complete">
-        <div className="section-title"><Goal size={17} /> Игра пройдена</div>
+        <div className="section-title"><Goal size={17} /> Выставка завершена</div>
       </section>
     );
   }
@@ -64,7 +73,7 @@ export function GoalBar({ soft, goal, opening, onClaim }: GoalBarProps) {
         <div className="goal-row">
           <div className="section-title">
             <Goal size={17} />
-            Прокачай все бизнесы и оптимизируй их на максимум
+            Доведи все авто до финального состояния и оптимизируй их на максимум
           </div>
           {goal.ready && (
             <button className="goal-claim ready" onClick={onClaim}>
@@ -87,11 +96,11 @@ export function GoalBar({ soft, goal, opening, onClaim }: GoalBarProps) {
       <div className="goal-row">
         <div className="section-title">
           <Goal size={17} />
-          Накопи ${formatMoney(goal.cost)}
+          Собери бюджет ${formatMoney(goal.cost)}
         </div>
         {showClaim && (
           <button className={`goal-claim ${ready ? "ready" : ""}`} disabled={!ready} onClick={onClaim}>
-            {opening ? "Открываем..." : "Выполнить"}
+            {opening ? "Открываем тип..." : "Выполнить"}
           </button>
         )}
       </div>

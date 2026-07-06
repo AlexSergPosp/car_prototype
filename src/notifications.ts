@@ -23,7 +23,7 @@ export function businessNotifications(business: Business, soft: number): Busines
   }
 
   if (!business.opened && business.unlockRemaining === 0 && soft >= business.openCost) {
-    notifications.push({ tone: "open", label: "Открыть" });
+    notifications.push({ tone: "open", label: "Купить" });
   }
 
   if (
@@ -33,7 +33,7 @@ export function businessNotifications(business: Business, soft: number): Busines
     business.expansionRemaining <= 0 &&
     expansionProgress(business).ready
   ) {
-    notifications.push({ tone: "upgrade", label: "Апгрейд" });
+    notifications.push({ tone: "upgrade", label: "Реставрация" });
   }
 
   return notifications;

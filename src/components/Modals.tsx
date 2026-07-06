@@ -2,7 +2,7 @@ import { Check, Gem, Search, Tv, UserMinus, X } from "lucide-react";
 import { AD_DURATION_SECONDS, AD_HINT_SECONDS, AD_QUIZ_BONUS, PREMIUM_MANAGER_COST, RARITY_CLASS, RARITY_NAME } from "../data";
 import { formatMoney, managerSalary } from "../game";
 import type { ActiveAd, Business, Manager, OfflineIncome } from "../types";
-import { managerEfficiencyClass } from "./managerUi";
+import { managerDisplayName, managerEfficiencyClass } from "./managerUi";
 
 interface ManagerModalProps {
   business: Business | null;
@@ -27,7 +27,7 @@ export function ManagerModal({ business, managers, premiumManager, hard, manager
     <div className="modal-overlay">
       <div className="modal-box">
         <div className="row-between mb-4">
-          <h2>Менеджеры</h2>
+          <h2>{business ? `Механики для ${business.name}` : "Автомеханики"}</h2>
           <button className="icon-quiet" onClick={onClose}><X size={18} /></button>
         </div>
         <div className="manager-modal-grid">
@@ -38,9 +38,10 @@ export function ManagerModal({ business, managers, premiumManager, hard, manager
                   <button className="manager-choice-main" onClick={() => onAssign(slot)}>
                     <div className={`portrait ${RARITY_CLASS[manager.rarity]}`}>{manager.face}</div>
                     <div className="min-w-0 text-left">
-                      <div className="text-base font-black">{RARITY_NAME[manager.rarity]}</div>
+                      <div className="text-base font-black">{managerDisplayName(manager)}</div>
+                      <div className="text-xs font-black text-slate-500">{RARITY_NAME[manager.rarity]} автомеханик</div>
                       <div className={`text-sm font-bold ${managerEfficiencyClass(manager)}`}>Эффективность {Math.round(manager.efficiency * 100)}%</div>
-                      <div className="text-xs text-slate-500">{business ? `Зарплата $${managerSalary(business, manager).toFixed(2)}/сек` : `Зарпл. x${manager.salary.toFixed(2)}`}</div>
+                      <div className="text-xs text-slate-500">{business ? `Оплата $${managerSalary(business, manager).toFixed(2)}/сек` : `Оплата x${manager.salary.toFixed(2)}`}</div>
                     </div>
                   </button>
                   <button className="icon-danger" onClick={() => onFire(slot)} title="Отказать">
@@ -50,7 +51,7 @@ export function ManagerModal({ business, managers, premiumManager, hard, manager
               ) : (
                 <button className="empty-manager modal-search" onClick={() => onSearch(slot)}>
                   <Search size={22} />
-                  <span>Искать</span>
+                  <span>Найти</span>
                   <small>{hireLabel}</small>
                 </button>
               )}
@@ -60,9 +61,10 @@ export function ManagerModal({ business, managers, premiumManager, hard, manager
             <div className="manager-choice premium-manager-card">
               <div className={`portrait ${RARITY_CLASS[premiumManager.rarity]}`}>{premiumManager.face}</div>
               <div className="min-w-0 flex-1 text-left">
-                <div className="text-base font-black">Прем менеджер</div>
+                <div className="text-base font-black">{managerDisplayName(premiumManager)}</div>
+                <div className="text-xs font-black text-slate-500">Премиум под это авто</div>
                 <div className={`text-sm font-bold ${managerEfficiencyClass(premiumManager)}`}>Эффективность {Math.round(premiumManager.efficiency * 100)}%</div>
-                <div className="text-xs text-slate-500">{business ? `Зарплата $${managerSalary(business, premiumManager).toFixed(2)}/сек` : `Зарпл. x${premiumManager.salary.toFixed(2)}`}</div>
+                <div className="text-xs text-slate-500">{business ? `Оплата $${managerSalary(business, premiumManager).toFixed(2)}/сек` : `Оплата x${premiumManager.salary.toFixed(2)}`}</div>
               </div>
               <button className="manager-card-action" disabled={!canHirePremium} onClick={onPremiumHire}>
                 <Gem size={15} />
@@ -84,7 +86,7 @@ export function AdModal({ ad, onAnswer, onCloseResult }: { ad: ActiveAd | null; 
   return (
     <div className="modal-overlay">
       <div className="ad-box ad-quiz-box">
-        <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Реклама-квиз</div>
+        <div className="text-xs font-black uppercase tracking-[0.3em] text-slate-500">Авто-квиз</div>
         {ad.phase === "watching" && (
           <>
             <div className="ad-countdown">{ad.seconds}</div>
@@ -101,7 +103,7 @@ export function AdModal({ ad, onAnswer, onCloseResult }: { ad: ActiveAd | null; 
         )}
         {ad.phase === "quiz" && (
           <>
-            <div className="ad-question">Что это за фильм?</div>
+            <div className="ad-question">Что это за авто-легенда?</div>
             <div className="ad-quiz-options">
               {ad.quiz.options.map((option) => (
                 <button className="ad-quiz-option" key={option} onClick={() => onAnswer(option)}>{option}</button>
@@ -131,16 +133,16 @@ export function OfflineIncomeModal({ reward, onClose, onDouble }: { reward: Offl
       <div className="modal-box offline-income-modal">
         <div className="offline-income-icon">$</div>
         <div>
-          <div className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">Офлайн доход</div>
-          <h2>Бизнес работал {formatOfflineDuration(reward.seconds)}</h2>
+          <div className="text-xs font-black uppercase tracking-[0.25em] text-slate-500">Офлайн выручка</div>
+          <h2>Выставка работала {formatOfflineDuration(reward.seconds)}</h2>
         </div>
         <div className="offline-income-amount">+${formatMoney(reward.income)}</div>
-        <p>Доход начислен только от бизнесов с менеджерами.</p>
+        <p>Выручка начислена только от авто с автомеханиками.</p>
         <div className="offline-income-actions">
           <button className="primary-button expand" onClick={onDouble}>
             <Tv size={18} /> x2 за рекламу
           </button>
-          <button className="primary-button" onClick={onClose}>Забрать</button>
+          <button className="primary-button muted" onClick={onClose}>Забрать</button>
         </div>
       </div>
     </div>
@@ -163,14 +165,14 @@ export function VictoryModal({ open, onClose }: { open: boolean; onClose: () => 
   );
 }
 
-export function LevelUnlockModal({ name }: { name: string | null }) {
+export function LevelUnlockModal({ name, onClose }: { name: string | null; onClose: () => void }) {
   if (!name) return null;
   return (
-    <div className="modal-overlay unlock-overlay">
+    <div className="modal-overlay unlock-overlay" onClick={onClose}>
       <div className="ad-box unlock-box">
         <div className="unlock-stars">★★★</div>
         <h2>{name}</h2>
-        <p>Новый уровень бизнесов открыт</p>
+        <p>Новый тип легендарных авто открыт</p>
       </div>
     </div>
   );

@@ -1,13 +1,15 @@
-import { Star } from "lucide-react";
+import { vehicleConditionForTier } from "../vehicleConcept";
 
 export function BusinessLevelStars({ level, compact = false }: { level: number; compact?: boolean }) {
-  const stars = Math.max(1, Math.floor(level));
+  const condition = vehicleConditionForTier(level);
   return (
-    <div className={`business-level-stars ${compact ? "compact" : ""}`} aria-label={`Уровень бизнеса ${stars}`}>
-      {Array.from({ length: stars }, (_, index) => (
-        <Star key={index} size={compact ? 12 : 15} fill="currentColor" />
-      ))}
-      {!compact && <span>Ур. {stars}</span>}
+    <div className={`business-level-stars condition-${condition.tone} ${compact ? "compact" : ""}`} aria-label={`Состояние авто: ${condition.label}`}>
+      <span className="condition-pips" aria-hidden="true">
+        {Array.from({ length: 3 }, (_, index) => (
+          <i className={index < condition.stage ? "filled" : ""} key={index} />
+        ))}
+      </span>
+      <span>{compact ? condition.short : condition.label}</span>
     </div>
   );
 }
