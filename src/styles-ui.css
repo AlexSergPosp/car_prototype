@@ -1,38 +1,76 @@
 .manager-badge {
-  width: 180px;
+  width: 72px;
+  min-height: 72px;
   min-width: 0;
-  display: flex;
+  display: grid;
+  place-items: center;
   align-items: center;
-  gap: 8px;
-  padding: 8px;
+  gap: 3px;
+  padding: 6px;
+  position: relative;
   border-radius: 8px;
   background: #101628;
+  border: 1px solid #29304f;
 }
 
-.collect-ring, .collect-ready, .assign-button {
-  width: 54px;
-  height: 54px;
+.manager-badge .portrait.sm {
+  width: 38px;
+  height: 38px;
+  font-size: 20px;
+}
+
+.manager-badge-text {
+  width: 100%;
+  color: #cbd5e1;
+  text-align: center;
+}
+
+.manager-badge-text .text-sm {
+  font-size: 9px;
+  line-height: 1.1;
+}
+
+.manager-badge .icon-quiet {
+  position: absolute;
+  right: -7px;
+  top: -7px;
+  width: 24px;
+  height: 24px;
+}
+
+.manager-frame {
+  width: 72px;
+  min-height: 72px;
   flex: 0 0 auto;
   display: grid;
   place-items: center;
+  gap: 2px;
+  border: 1px dashed #405177;
   border-radius: 8px;
-}
-
-.collect-ring {
-  border: 7px solid #101628;
-}
-
-.collect-ready {
-  background: #123322;
-  color: #4ade80;
-  font-size: 15px;
+  background: #101628;
+  color: #94a3b8;
+  font-size: 12px;
   font-weight: 900;
+}
+
+.manager-frame.action {
+  border-style: dashed;
+  border-color: #405177;
+  color: #9fb6e8;
+  background: #101628;
+}
+
+.manager-frame.collectable {
+  border-style: solid;
+  border-color: #4ade80;
+  color: #4ade80;
+  background: #123322;
   box-shadow: 0 0 18px rgba(74, 222, 128, 0.35);
 }
 
-.assign-button {
-  background: #123322;
-  color: #4ade80;
+.manager-frame-icon {
+  font-size: 22px;
+  line-height: 1;
 }
 
 .detail-panel h2, .modal-box h2 {
@@ -199,6 +237,15 @@
   background: #151a31;
 }
 
+.manager-modal-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.manager-modal-slot {
+  min-height: 84px;
+}
+
 .manager-choice {
   width: 100%;
   display: flex;
@@ -208,6 +255,22 @@
   border: 1px solid #29304f;
   border-radius: 8px;
   background: #101628;
+}
+
+.manager-choice-main {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+}
+
+.modal-search {
+  min-height: 84px;
+  border-radius: 8px;
 }
 
 .empty-modal {

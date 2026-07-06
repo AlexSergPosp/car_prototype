@@ -1,14 +1,15 @@
-import { BriefcaseBusiness, Gem, Goal, TrendingUp } from "lucide-react";
-import { CATEGORIES, GROUP_COSTS, MONEY_GOAL } from "../data";
-import { formatMoney, nextGroupCost } from "../game";
+import { Gem, Goal, RotateCcw } from "lucide-react";
+import { MONEY_GOAL } from "../data";
+import { formatMoney } from "../game";
 
 interface TopBarProps {
   soft: number;
   hard: number;
   totalAuto: number;
+  onReset: () => void;
 }
 
-export function TopBar({ soft, hard, totalAuto }: TopBarProps) {
+export function TopBar({ soft, hard, totalAuto, onReset }: TopBarProps) {
   return (
     <header className="top-bar">
       <div className="money-pill">
@@ -19,9 +20,14 @@ export function TopBar({ soft, hard, totalAuto }: TopBarProps) {
         <div className="app-title">Бизнес Империя</div>
         <div className="income-line">+${formatMoney(totalAuto)}/сек</div>
       </div>
-      <div className="money-pill">
-        <Gem size={18} />
-        <span>{hard}</span>
+      <div className="top-actions">
+        <div className="money-pill">
+          <Gem size={18} />
+          <span>{hard}</span>
+        </div>
+        <button className="reset-button" type="button" title="Полный сброс" aria-label="Полный сброс" onClick={onReset}>
+          <RotateCcw size={18} />
+        </button>
       </div>
     </header>
   );
@@ -42,49 +48,5 @@ export function GoalBar({ soft }: { soft: number }) {
         <div className="goal-fill" style={{ width: `${progress}%` }} />
       </div>
     </section>
-  );
-}
-
-interface GroupOptimizationProps {
-  activeCategory: number;
-  groupLevels: number[];
-  hard: number;
-  onInvest: () => void;
-}
-
-export function GroupOptimization({ activeCategory, groupLevels, hard, onInvest }: GroupOptimizationProps) {
-  const level = groupLevels[activeCategory] || 0;
-  const cost = nextGroupCost(level);
-  const progress = (level / GROUP_COSTS.length) * 100;
-  return (
-    <footer className="group-opt">
-      <div className="row-between mb-3">
-        <div className="section-title">
-          <TrendingUp size={17} />
-          Оптимизация: {CATEGORIES[activeCategory].name}
-        </div>
-        <div className="level-badge">{level}/5</div>
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="progress-track">
-            <div className="group-fill" style={{ width: `${progress}%` }} />
-          </div>
-          <div className="mt-1 flex justify-between text-[11px] font-bold text-slate-500">
-            <span>+5%</span><span>+10%</span><span>+15%</span><span>+20%</span><span>+25%</span>
-          </div>
-        </div>
-        <button className="invest-button" disabled={cost == null || hard < cost} onClick={onInvest}>
-          {cost == null ? (
-            <>Макс</>
-          ) : (
-            <>
-              <BriefcaseBusiness size={16} />
-              {cost} 💎
-            </>
-          )}
-        </button>
-      </div>
-    </footer>
   );
 }

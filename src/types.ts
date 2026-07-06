@@ -1,21 +1,11 @@
 export type Rarity = "white" | "green" | "blue" | "purple" | "orange";
 
-export type ManagerStat =
-  | "inc5"
-  | "off5"
-  | "inc20"
-  | "cost50"
-  | "offcap20"
-  | "solo100"
-  | "full30"
-  | "step1"
-  | "dbl2";
-
 export interface Manager {
   id: number;
   face: string;
   rarity: Rarity;
-  stat: ManagerStat | null;
+  efficiency: number;
+  salary: number;
   desc: string;
 }
 
@@ -25,6 +15,26 @@ export interface CategorySeed {
   biz: Array<{ n: string; ic: string; base: number }>;
 }
 
+export interface EquipmentItem {
+  id: string;
+  name: string;
+  icon: string;
+  baseCost: number;
+}
+
+export interface LongActionItem {
+  id: string;
+  name: string;
+  icon: string;
+  baseCost: number;
+  baseSeconds: number;
+}
+
+export type ExpansionRequirement =
+  | { id: string; type: "work"; requiredSeconds: number }
+  | { id: string; type: "equipment"; equipmentId: string; quantity: number; owned: number; unitCost: number }
+  | { id: string; type: "action"; actionId: string; cost: number; duration: number; remaining: number; done: boolean };
+
 export interface Business {
   id: number;
   name: string;
@@ -32,13 +42,14 @@ export interface Business {
   catIdx: number;
   base: number;
   tier: number;
-  ups: boolean[];
-  upCnt: number;
+  opened: boolean;
+  openCost: number;
+  unlockRemaining: number | null;
   manager: Manager | null;
   collectTimer: number;
   collectReady: boolean;
-  tierTimer: number;
-  tierActive: boolean;
-  tierDone: boolean;
+  workedSeconds: number;
+  requirements: ExpansionRequirement[];
+  optimizationLevel: number;
   maxed: boolean;
 }

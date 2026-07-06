@@ -44,12 +44,45 @@
   animation: autoFlow 1.1s linear infinite;
 }
 
+.business-progress.locked-progress {
+  border-color: #334155;
+}
+
+.business-progress.locked-progress .business-progress-fill {
+  background: linear-gradient(90deg, #64748b, #facc15);
+}
+
 .business-card.auto-active {
   box-shadow: inset 0 0 0 1px rgba(168, 85, 247, 0.16);
 }
 
+.business-card.collectable {
+  border-color: #4ade80;
+  background: linear-gradient(135deg, #18243a, #123322);
+  box-shadow: inset 0 0 0 1px rgba(74, 222, 128, 0.35), 0 0 18px rgba(74, 222, 128, 0.12);
+}
+
+.business-card.collectable .biz-icon {
+  animation: collectReadyPulse 1s ease-in-out infinite;
+}
+
 .business-card.auto-active .biz-icon {
   animation: autoPulse 1.4s ease-in-out infinite;
+}
+
+.collect-hint {
+  position: absolute;
+  right: 14px;
+  bottom: 10px;
+  pointer-events: none;
+  padding: 4px 8px;
+  border-radius: 999px;
+  color: #052e16;
+  background: #4ade80;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .income-burst {
@@ -80,6 +113,11 @@
 @keyframes autoPulse {
   0%, 100% { transform: scale(1); filter: brightness(1); }
   50% { transform: scale(1.04); filter: brightness(1.25); }
+}
+
+@keyframes collectReadyPulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.06); filter: brightness(1.35); }
 }
 
 @keyframes autoFlow {

@@ -1,17 +1,19 @@
-import { X } from "lucide-react";
-import { RARITY_CLASS, RARITY_NAME, STAT_FULL } from "../data";
+import { Search, UserMinus, X } from "lucide-react";
+import { RARITY_CLASS, RARITY_NAME } from "../data";
 import type { Manager } from "../types";
 
 interface ManagerModalProps {
   managers: Array<Manager | null>;
   open: boolean;
+  searchCount: number;
+  onSearch: (slot: number) => void;
   onAssign: (slot: number) => void;
+  onFire: (slot: number) => void;
   onClose: () => void;
 }
 
-export function ManagerModal({ managers, open, onAssign, onClose }: ManagerModalProps) {
+export function ManagerModal({ managers, open, searchCount, onSearch, onAssign, onFire, onClose }: ManagerModalProps) {
   if (!open) return null;
-  const available = managers.map((manager, slot) => ({ manager, slot })).filter((item) => item.manager);
   return (
     <div className="modal-overlay">
       <div className="modal-box">
@@ -19,22 +21,33 @@ export function ManagerModal({ managers, open, onAssign, onClose }: ManagerModal
           <h2>Выберите менеджера</h2>
           <button className="icon-quiet" onClick={onClose}><X size={18} /></button>
         </div>
-        {available.length === 0 ? (
-          <div className="empty-modal">Нет доступных менеджеров.</div>
-        ) : (
-          <div className="space-y-3">
-            {available.map(({ manager, slot }) => manager && (
-              <button className="manager-choice" key={manager.id} onClick={() => onAssign(slot)}>
-                <div className={`portrait ${RARITY_CLASS[manager.rarity]}`}>{manager.face}</div>
-                <div className="min-w-0 text-left">
-                  <div className="text-base font-black">{RARITY_NAME[manager.rarity]}</div>
-                  <div className="text-sm font-bold text-slate-300">{manager.desc}</div>
-                  <div className="text-xs text-slate-500">{manager.stat ? STAT_FULL[manager.stat] : "Без особых способностей"}</div>
+        <div className="manager-modal-grid">
+          {managers.map((manager, slot) => (
+            <div className="manager-modal-slot" key={slot}>
+              {manager ? (
+                <div className="manager-choice">
+                  <button className="manager-choice-main" onClick={() => onAssign(slot)}>
+                    <div className={`portrait ${RARITY_CLASS[manager.rarity]}`}>{manager.face}</div>
+                    <div className="min-w-0 text-left">
+                      <div className="text-base font-black">{RARITY_NAME[manager.rarity]}</div>
+                      <div className="text-sm font-bold text-slate-300">Эффективность {Math.round(manager.efficiency * 100)}%</div>
+                      <div className="text-xs text-slate-500">Зарплата ${manager.salary.toFixed(2)}/сек</div>
+                    </div>
+                  </button>
+                  <button className="icon-danger" onClick={() => onFire(slot)} title="Отказать">
+                    <UserMinus size={16} />
+                  </button>
                 </div>
-              </button>
-            ))}
-          </div>
-        )}
+              ) : (
+                <button className="empty-manager modal-search" onClick={() => onSearch(slot)}>
+                  <Search size={22} />
+                  <span>Искать</span>
+                  <small>{searchCount === 0 ? "Бесплатно" : "Реклама"}</small>
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
