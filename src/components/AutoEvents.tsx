@@ -95,6 +95,7 @@ export function AutoEvents({ businesses, unlocked, run, reward, cooldowns, onBac
     body = (
       <div className="auto-event-simple">
         <section className="auto-event-hero-card">
+          <div className="auto-event-flow-label"><span>1</span><strong>Выбери конкурс</strong></div>
           <div className="auto-event-hero-main">
             <div className="auto-event-hero-icon">{selectedContest.icon}</div>
             <div>
@@ -107,6 +108,12 @@ export function AutoEvents({ businesses, unlocked, run, reward, cooldowns, onBac
             <div><span>Время</span><strong>{formatSeconds(selectedContest.duration)}</strong></div>
             <div><span>Награда</span><strong>${formatMoney(selectedBusiness ? selectedReward : selectedContest.rewardSoft)}</strong></div>
             <div><span>Готово авто</span><strong>{readyCount}/{candidates.length}</strong></div>
+          </div>
+          <div className="auto-event-fit-row">
+            <span>Важны</span>
+            <div className="auto-event-fit-tags">
+              {targetStats.map((stat) => <i key={stat}>{VEHICLE_STAT_LABELS[stat]}</i>)}
+            </div>
           </div>
         </section>
 
@@ -130,6 +137,7 @@ export function AutoEvents({ businesses, unlocked, run, reward, cooldowns, onBac
         </section>
 
         <section className="auto-event-pick-card">
+          <div className="auto-event-flow-label"><span>2</span><strong>Подбери авто</strong></div>
           <div className="auto-event-pick-head">
             <div>
               <span>Авто для заявки</span>
@@ -161,6 +169,7 @@ export function AutoEvents({ businesses, unlocked, run, reward, cooldowns, onBac
 
         {selectedBusiness && (
           <section className="auto-event-submit-card">
+            <div className="auto-event-flow-label"><span>3</span><strong>Отправь заявку</strong></div>
             <div className="auto-event-submit-summary">
               <div><span>Конкурс</span><strong>{selectedContest.name}</strong></div>
               <div><span>Выигрыш</span><strong>${formatMoney(selectedReward)} · {selectedContest.rewardHard} 💎</strong></div>
@@ -216,6 +225,9 @@ function AutoEventCarPicker({ candidates, selectedBusinessId, targetStats, onClo
           <div>
             <span>Выбор авто</span>
             <strong>Кого отправить на конкурс</strong>
+            <div className="auto-event-fit-tags">
+              {targetStats.map((stat) => <i key={stat}>{VEHICLE_STAT_LABELS[stat]}</i>)}
+            </div>
           </div>
           <button className="icon-quiet" onClick={onClose} title="Закрыть"><X size={18} /></button>
         </div>

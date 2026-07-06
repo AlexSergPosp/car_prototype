@@ -284,6 +284,8 @@ button {
 .auto-event-summary-button,
 .auto-event-entry-icon,
 .auto-event-hero-icon,
+.auto-event-flow-label span,
+.auto-event-fit-row,
 .auto-event-hero-metrics > div,
 .auto-event-submit-summary > div,
 .auto-event-contest-tab,
@@ -312,6 +314,7 @@ button {
 .auto-event-summary-main strong,
 .auto-event-hero-main strong,
 .auto-event-pick-head strong,
+.auto-event-flow-label strong,
 .auto-event-hero-metrics strong,
 .auto-event-submit-summary strong,
 .auto-event-picker-head strong,
@@ -340,6 +343,8 @@ button {
 
 .auto-contest-button small,
 .auto-event-summary-main small,
+.auto-event-flow-label,
+.auto-event-fit-row > span,
 .auto-event-hero-main span,
 .auto-event-hero-main small,
 .auto-event-pick-head span,
@@ -373,6 +378,8 @@ button {
 .auto-event-picker-car.selected,
 .auto-event-summary-button,
 .auto-event-select-button,
+.auto-event-flow-label span,
+.auto-event-fit-tags i,
 .auto-event-car-tags i {
   border-color: #93c5fd;
   background: #eff6ff;
