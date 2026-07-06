@@ -1,7 +1,7 @@
 import { MANAGER_COOLDOWN_SECONDS, MAX_BUSINESS_TIER, OPTIMIZATION_COSTS } from "./data";
-import { advanceAutoEvent, sanitizeAutoEventReward, sanitizeAutoEventRun } from "./autoEvents";
+import { advanceAutoEvent, sanitizeAutoEventCooldowns, sanitizeAutoEventReward, sanitizeAutoEventRun, tickAutoEventCooldowns } from "./autoEvents";
 import { createBusinessPremiumManager, createBusinesses, createManager, createPremiumManager, normalizeExpansionRequirements, tickBusinesses } from "./game";
-import type { AutoEventReward, AutoEventRun, Business, Manager, OfflineIncome } from "./types";
+import type { AutoEventCooldowns, AutoEventReward, AutoEventRun, Business, Manager, OfflineIncome } from "./types";
 
 const SAVE_KEY = "business-empire-save-v2";
 const OFFLINE_THRESHOLD_SECONDS = 10;
@@ -20,6 +20,7 @@ export interface GameSnapshot {
   managerCooldown: number;
   autoEventRun: AutoEventRun | null;
   autoEventReward: AutoEventReward | null;
+  autoEventCooldowns: AutoEventCooldowns;
   victoryShown: boolean;
 }
 
@@ -41,6 +42,7 @@ export function defaultSnapshot(): GameSnapshot {
     managerCooldown: MANAGER_COOLDOWN_SECONDS,
     autoEventRun: null,
     autoEventReward: null,
+    autoEventCooldowns: {},
     victoryShown: false,
   };
 }
@@ -73,6 +75,7 @@ export function advanceOffline(snapshot: GameSnapshot, seconds: number): { snaps
       managerCooldown: Math.max(0, snapshot.managerCooldown - seconds),
       autoEventRun: eventResult.run,
       autoEventReward: snapshot.autoEventReward ?? eventResult.reward,
+      autoEventCooldowns: tickAutoEventCooldowns(snapshot.autoEventCooldowns, seconds),
     },
     income,
   };
@@ -111,6 +114,7 @@ function sanitizeSnapshot(stored: StoredGame): GameSnapshot {
   const fallback = defaultSnapshot();
   const businesses = mergeBusinesses(stored.businesses, fallback.businesses);
   const autoEventReward = sanitizeAutoEventReward(stored.autoEventReward, businesses);
+  const autoEventCooldowns = sanitizeAutoEventCooldowns(stored.autoEventCooldowns, businesses);
   return {
     soft: finiteOr(stored.soft, fallback.soft),
     hard: finiteOr(stored.hard, fallback.hard),
@@ -124,6 +128,7 @@ function sanitizeSnapshot(stored: StoredGame): GameSnapshot {
     managerCooldown: finiteOr(stored.managerCooldown, fallback.managerCooldown),
     autoEventRun: autoEventReward ? null : sanitizeAutoEventRun(stored.autoEventRun, businesses),
     autoEventReward,
+    autoEventCooldowns,
     victoryShown: Boolean(stored.victoryShown),
   };
 }

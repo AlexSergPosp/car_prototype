@@ -1,7 +1,8 @@
 import { AUTO_EVENT_CONTESTS, MAX_BUSINESS_TIER, OPTIMIZATION_COSTS, VEHICLE_STATS } from "./data";
-import type { AutoEventContest, AutoEventReward, AutoEventRun, Business, VehicleStatKey, VehicleStats } from "./types";
+import type { AutoEventContest, AutoEventCooldowns, AutoEventReward, AutoEventRun, Business, VehicleStatKey, VehicleStats } from "./types";
 
 export const VEHICLE_STAT_KEYS: VehicleStatKey[] = ["speed", "style", "authenticity", "engineering", "media"];
+export const AUTO_EVENT_RECOVERY_SECONDS = 5 * 60;
 
 const FALLBACK_STATS: VehicleStats = { speed: 3, style: 3, authenticity: 3, engineering: 3, media: 3 };
 
@@ -52,6 +53,26 @@ export function createAutoEventRun(business: Business, contest: AutoEventContest
   };
 }
 
+export function autoEventCooldownFor(cooldowns: AutoEventCooldowns, businessId: number): number {
+  return Math.max(0, cooldowns[businessId] ?? 0);
+}
+
+export function autoEventStartCooldown(contest: AutoEventContest): number {
+  return contest.duration + AUTO_EVENT_RECOVERY_SECONDS;
+}
+
+export function tickAutoEventCooldowns(cooldowns: AutoEventCooldowns, seconds: number): AutoEventCooldowns {
+  if (seconds <= 0) return cooldowns;
+  let changed = false;
+  const next: AutoEventCooldowns = {};
+  Object.entries(cooldowns).forEach(([id, value]) => {
+    const remaining = Math.max(0, finiteClamp(value, 0, 24 * 60 * 60, 0) - seconds);
+    if (remaining > 0) next[Number(id)] = remaining;
+    if (remaining !== value) changed = true;
+  });
+  return changed || Object.keys(next).length !== Object.keys(cooldowns).length ? next : cooldowns;
+}
+
 export function advanceAutoEvent(run: AutoEventRun | null, seconds: number): { run: AutoEventRun | null; reward: AutoEventReward | null } {
   if (!run) return { run: null, reward: null };
   const remaining = Math.max(0, run.remaining - seconds);
@@ -100,6 +121,19 @@ export function sanitizeAutoEventReward(reward: AutoEventReward | null | undefin
     soft: finiteClamp(reward.soft, 0, 1e12, 0),
     hard: finiteClamp(reward.hard, 0, 1000, 0),
   };
+}
+
+export function sanitizeAutoEventCooldowns(cooldowns: AutoEventCooldowns | undefined, businesses: Business[]): AutoEventCooldowns {
+  if (!cooldowns || typeof cooldowns !== "object") return {};
+  const openedIds = new Set(businesses.filter((business) => business.opened).map((business) => business.id));
+  const next: AutoEventCooldowns = {};
+  Object.entries(cooldowns).forEach(([key, value]) => {
+    const id = Number(key);
+    if (!openedIds.has(id)) return;
+    const remaining = finiteClamp(value, 0, 24 * 60 * 60, 0);
+    if (remaining > 0) next[id] = remaining;
+  });
+  return next;
 }
 
 function seededUnit(seed: number): number {

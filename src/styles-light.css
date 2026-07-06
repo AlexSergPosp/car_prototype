@@ -259,19 +259,46 @@ button {
 .auto-event-panel,
 .auto-event-panel.locked,
 .auto-event-summary-card,
-.auto-event-summary-card.locked {
+.auto-event-summary-card.locked,
+.auto-event-hero-card,
+.auto-event-pick-card,
+.auto-event-submit-card,
+.auto-event-overview,
+.auto-event-step {
   border-color: var(--line);
   background: var(--surface);
   box-shadow: 0 8px 22px rgba(30, 41, 59, 0.08);
+}
+
+.auto-event-overview {
+  background: linear-gradient(180deg, #ffffff, #eff6ff);
+}
+
+.auto-event-hero-card {
+  background: linear-gradient(180deg, #ffffff, #eff6ff);
 }
 
 .auto-event-lock-icon,
 .auto-event-result-icon,
 .auto-event-time,
 .auto-event-summary-button,
+.auto-event-entry-icon,
+.auto-event-hero-icon,
+.auto-event-hero-metrics > div,
+.auto-event-submit-summary > div,
+.auto-event-contest-tab,
+.auto-event-select-button,
+.auto-event-picker-car,
+.auto-event-overview-metrics > div,
+.auto-event-state-grid > div,
+.auto-event-application > div:not(.auto-event-chance),
+.auto-event-step-title > span,
+.auto-contest-card,
+.auto-contest-icon,
 .auto-contest-button,
 .auto-event-selected,
 .auto-event-chance,
+.auto-event-cooldown-chip,
 .auto-event-car,
 .auto-event-reward-row,
 .vehicle-stat-bar div {
@@ -283,6 +310,18 @@ button {
 .auto-event-lock strong,
 .auto-event-screen-head strong,
 .auto-event-summary-main strong,
+.auto-event-hero-main strong,
+.auto-event-pick-head strong,
+.auto-event-hero-metrics strong,
+.auto-event-submit-summary strong,
+.auto-event-picker-head strong,
+.auto-event-overview-title strong,
+.auto-event-step-title strong,
+.auto-event-state-hero strong,
+.auto-event-overview-metrics strong,
+.auto-event-state-grid strong,
+.auto-event-application strong,
+.auto-contest-copy strong,
 .auto-event-head strong,
 .auto-event-selected-main strong,
 .auto-event-result-copy strong,
@@ -291,6 +330,8 @@ button {
 }
 
 .auto-contest-button.active,
+.auto-contest-card.active,
+.auto-event-contest-tab.active,
 .auto-event-chance.mid {
   border-color: #fbbf24;
   background: #fffbeb;
@@ -299,9 +340,26 @@ button {
 
 .auto-contest-button small,
 .auto-event-summary-main small,
+.auto-event-hero-main span,
+.auto-event-hero-main small,
+.auto-event-pick-head span,
+.auto-event-pick-head small,
+.auto-event-submit-summary span,
+.auto-event-picker-head span,
+.auto-event-hero-metrics span,
+.auto-event-overview-title small,
+.auto-event-step-title small,
+.auto-event-state-hero span,
+.auto-event-state-hero small,
+.auto-event-overview-metrics span,
+.auto-event-state-grid span,
+.auto-event-application span,
+.auto-contest-copy small,
+.auto-contest-card em,
 .auto-event-description,
 .auto-event-selected-main span,
 .auto-event-selected-main small,
+.auto-event-car-title small,
 .auto-event-result-copy span,
 .auto-event-result-copy p,
 .auto-event-reward-row span,
@@ -312,10 +370,57 @@ button {
 
 .auto-event-goals span,
 .auto-event-car.selected,
-.auto-event-summary-button {
+.auto-event-picker-car.selected,
+.auto-event-summary-button,
+.auto-event-select-button,
+.auto-event-car-tags i {
   border-color: #93c5fd;
   background: #eff6ff;
   color: #1d4ed8;
+}
+
+.auto-event-car.cooldown {
+  background: #f1f5f9;
+  opacity: 0.72;
+}
+
+.auto-event-picker-car.cooldown {
+  background: #f1f5f9;
+  opacity: 0.72;
+}
+
+.auto-event-cooldown-chip {
+  border-color: #cbd5e1;
+  background: #e2e8f0;
+  color: #475569;
+}
+
+.auto-event-cooldown-note {
+  border-color: #fecaca;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.auto-event-overview-title > span {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.auto-event-hero-icon {
+  border-color: #fde68a;
+  background: #fffbeb;
+}
+
+.auto-event-entry-icon {
+  border-color: #93c5fd;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.auto-event-update-badge {
+  border-color: var(--surface);
+  background: #dc2626;
+  color: #fff;
 }
 
 .auto-event-summary-card.reward.success {

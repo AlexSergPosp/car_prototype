@@ -87,6 +87,8 @@ export interface AutoEventReward {
   hard: number;
 }
 
+export type AutoEventCooldowns = Record<number, number>;
+
 export type ExpansionRequirement =
   | { id: string; type: "work"; requiredSeconds: number }
   | { id: string; type: "equipment"; equipmentId: string; quantity: number; owned: number; unitCost: number }

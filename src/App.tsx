@@ -5,11 +5,11 @@ import { GoalBar, TopBar, type MainGoal } from "./components/Bars";
 import { DetailPanel } from "./components/DetailPanel";
 import { AdModal, LevelUnlockModal, ManagerModal, OfflineIncomeModal, VictoryModal } from "./components/Modals";
 import { Tabs } from "./components/Tabs";
-import { advanceAutoEvent, autoEventById, createAutoEventRun } from "./autoEvents";
+import { advanceAutoEvent, autoEventById, autoEventCooldownFor, autoEventStartCooldown, createAutoEventRun, tickAutoEventCooldowns } from "./autoEvents";
 import { AD_AUTO_QUIZZES, AD_DURATION_SECONDS, AD_QUIZ_BONUS, AUTO_EVENT_UNLOCK_CATEGORY, CATEGORIES, CATEGORY_UNLOCK_GOALS, COLLECT_TIME, GEM_AD_REWARD, MANAGER_COOLDOWN_SECONDS, MAX_BUSINESS_TIER, OPTIMIZATION_COSTS, PREMIUM_MANAGER_COST } from "./data";
 import { completeExpansion, createBusinessPremiumManager, createBusinesses, createManager, effectiveIncome, expansionDurationSeconds, expansionProgress, nextBusinessOpenCost, nextOptimizationCost, tickBusinesses, unlockDelaySeconds } from "./game";
 import { advanceOffline, clearProgress, loadProgress, saveProgress, type GameSnapshot } from "./save";
-import type { ActiveAd, AutoEventReward, AutoEventRun, Business, ExpansionReward, Manager, OfflineIncome } from "./types";
+import type { ActiveAd, AutoEventCooldowns, AutoEventReward, AutoEventRun, Business, ExpansionReward, Manager, OfflineIncome } from "./types";
 
 interface IncomeBurst {
   id: number;
@@ -39,6 +39,7 @@ export function App() {
   const [managerCooldown, setManagerCooldown] = useState(initialProgress.snapshot.managerCooldown);
   const [autoEventRun, setAutoEventRun] = useState<AutoEventRun | null>(initialProgress.snapshot.autoEventRun);
   const [autoEventReward, setAutoEventReward] = useState<AutoEventReward | null>(initialProgress.snapshot.autoEventReward);
+  const [autoEventCooldowns, setAutoEventCooldowns] = useState<AutoEventCooldowns>(initialProgress.snapshot.autoEventCooldowns);
   const [assignBusinessId, setAssignBusinessId] = useState<number | null>(null);
   const [activeAd, setActiveAd] = useState<ActiveAd | null>(null);
   const [victoryShown, setVictoryShown] = useState(initialProgress.snapshot.victoryShown && finalQuestProgress(initialProgress.snapshot.businesses).ready);
@@ -72,7 +73,7 @@ export function App() {
     return victoryShown ? null : { kind: "final", ...finalGoalProgress };
   }, [finalGoalProgress, unlockedCategory, victoryShown]);
 
-  snapshotRef.current = { soft, hard, businesses, activeCategory, unlockedCategory, selectedId, businessPageOpen, managers, managerSeed, managerCooldown, autoEventRun, autoEventReward, victoryShown };
+  snapshotRef.current = { soft, hard, businesses, activeCategory, unlockedCategory, selectedId, businessPageOpen, managers, managerSeed, managerCooldown, autoEventRun, autoEventReward, autoEventCooldowns, victoryShown };
 
   useEffect(() => {
     const timer = window.setInterval(() => {
@@ -108,6 +109,7 @@ export function App() {
         if (result.reward) setAutoEventReward((reward) => reward ?? result.reward);
         return result.run;
       });
+      setAutoEventCooldowns((current) => tickAutoEventCooldowns(current, dt));
       setManagerCooldown((value) => Math.max(0, value - dt));
     }, 250);
     return () => window.clearInterval(timer);
@@ -218,6 +220,7 @@ export function App() {
     setManagerCooldown(result.snapshot.managerCooldown);
     setAutoEventRun(result.snapshot.autoEventRun);
     setAutoEventReward(result.snapshot.autoEventReward);
+    setAutoEventCooldowns(result.snapshot.autoEventCooldowns);
     if (result.income > 0) {
       setOfflineIncome((current) => ({
         seconds: (current?.seconds ?? 0) + seconds,
@@ -266,6 +269,7 @@ export function App() {
     setManagerCooldown(MANAGER_COOLDOWN_SECONDS);
     setAutoEventRun(null);
     setAutoEventReward(null);
+    setAutoEventCooldowns({});
     setAssignBusinessId(null);
     setActiveAd(null);
     setOfflineIncome(null);
@@ -308,7 +312,9 @@ export function App() {
     const contest = autoEventById(eventId);
     const business = businesses.find((item) => item.id === businessId);
     if (!contest || !business?.opened) return;
+    if (autoEventCooldownFor(autoEventCooldowns, businessId) > 0) return;
     setAutoEventRun(createAutoEventRun(business, contest, Date.now() + business.id * 97));
+    setAutoEventCooldowns((current) => ({ ...current, [businessId]: autoEventStartCooldown(contest) }));
   }
 
   function handleClaimAutoEventReward() {
@@ -510,6 +516,7 @@ export function App() {
               unlocked={unlockedCategory >= AUTO_EVENT_UNLOCK_CATEGORY}
               run={autoEventRun}
               reward={autoEventReward}
+              cooldowns={autoEventCooldowns}
               onBack={() => setAutoEventsOpen(false)}
               onStart={handleStartAutoEvent}
               onClaim={handleClaimAutoEventReward}
@@ -519,9 +526,7 @@ export function App() {
           ) : (
             <div className="main-sections">
               <AutoEventSummary
-                businesses={businesses}
                 unlocked={unlockedCategory >= AUTO_EVENT_UNLOCK_CATEGORY}
-                run={autoEventRun}
                 reward={autoEventReward}
                 onOpen={openAutoEventsScreen}
               />

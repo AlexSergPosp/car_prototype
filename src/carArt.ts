@@ -28,6 +28,12 @@ import fordGt40Stage3 from "./assets/cars/ford-gt40-mk-ii-le-mans/stage-3.png";
 import porsche917Stage1 from "./assets/cars/porsche-917k-gulf/stage-1.png";
 import porsche917Stage2 from "./assets/cars/porsche-917k-gulf/stage-2.png";
 import porsche917Stage3 from "./assets/cars/porsche-917k-gulf/stage-3.png";
+import audiQuattroStage1 from "./assets/cars/audi-sport-quattro-s1/stage-1.png";
+import audiQuattroStage2 from "./assets/cars/audi-sport-quattro-s1/stage-2.png";
+import audiQuattroStage3 from "./assets/cars/audi-sport-quattro-s1/stage-3.png";
+import lanciaStratosStage1 from "./assets/cars/lancia-stratos-hf/stage-1.png";
+import lanciaStratosStage2 from "./assets/cars/lancia-stratos-hf/stage-2.png";
+import lanciaStratosStage3 from "./assets/cars/lancia-stratos-hf/stage-3.png";
 import type { Business } from "./types";
 import { vehicleConditionForTier } from "./vehicleConcept";
 
@@ -65,6 +71,12 @@ const CAR_ART_BY_ID: Record<number, CarArtSet> = {
   },
   9: {
     stages: [porsche917Stage1, porsche917Stage2, porsche917Stage3],
+  },
+  10: {
+    stages: [audiQuattroStage1, audiQuattroStage2, audiQuattroStage3],
+  },
+  11: {
+    stages: [lanciaStratosStage1, lanciaStratosStage2, lanciaStratosStage3],
   },
 };
 
