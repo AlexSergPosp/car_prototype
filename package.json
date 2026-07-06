@@ -9,16 +9,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MaximGrigoriev89/busines.git"
+    "url": "git+https://github.com/AlexSergPosp/car_prototype.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "module",
   "bugs": {
-    "url": "https://github.com/MaximGrigoriev89/busines/issues"
+    "url": "https://github.com/AlexSergPosp/car_prototype/issues"
   },
-  "homepage": "https://github.com/MaximGrigoriev89/busines#readme",
+  "homepage": "https://alexsergposp.github.io/car_prototype/",
   "dependencies": {
     "lucide-react": "^0.561.0",
     "react": "^19.2.3",
