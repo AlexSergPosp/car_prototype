@@ -107,6 +107,12 @@
   white-space: nowrap;
 }
 
+.auto-event-summary-card.locked .auto-event-summary-main small {
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+
 .auto-event-summary-button {
   min-height: 40px;
   display: inline-flex;
@@ -717,6 +723,15 @@
   font-size: 14px;
   font-weight: 950;
   line-height: 1.2;
+}
+
+.auto-event-lock small {
+  display: block;
+  margin-top: 4px;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1.35;
 }
 
 .auto-event-head {

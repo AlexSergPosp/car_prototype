@@ -8,6 +8,7 @@ import type { AutoEventCooldowns, AutoEventReward, AutoEventRun, Business, Vehic
 interface AutoEventsProps {
   businesses: Business[];
   unlocked: boolean;
+  unlockHint: string;
   run: AutoEventRun | null;
   reward: AutoEventReward | null;
   cooldowns: AutoEventCooldowns;
@@ -18,13 +19,14 @@ interface AutoEventsProps {
 
 interface AutoEventSummaryProps {
   unlocked: boolean;
+  unlockHint: string;
   reward: AutoEventReward | null;
   onOpen: () => void;
 }
 
 type AutoEventCandidate = { business: Business; chance: number; cooldown: number };
 
-export function AutoEventSummary({ unlocked, reward, onOpen }: AutoEventSummaryProps) {
+export function AutoEventSummary({ unlocked, unlockHint, reward, onOpen }: AutoEventSummaryProps) {
   const hasUpdate = Boolean(reward);
   return (
     <section className={`panel auto-event-summary-card compact ${hasUpdate ? "has-update" : ""} ${!unlocked ? "locked" : ""}`}>
@@ -33,16 +35,20 @@ export function AutoEventSummary({ unlocked, reward, onOpen }: AutoEventSummaryP
           <Flag size={22} />
           {hasUpdate && <span className="auto-event-update-badge">!</span>}
         </div>
-        <div className="section-title">Автоивенты</div>
+        <div>
+          <div className="section-title">Автоивенты</div>
+          <strong>{unlocked ? (hasUpdate ? "Есть итог конкурса" : "Конкурсы для коллекции") : "Пока недоступны"}</strong>
+          <small>{unlocked ? (hasUpdate ? "Забери награду за заявку." : "Отправляй авто на выставочные задания.") : unlockHint}</small>
+        </div>
       </div>
-      <button className="auto-event-summary-button" disabled={!unlocked} onClick={onOpen}>
-        Перейти <ChevronRight size={17} />
+      <button className="auto-event-summary-button" onClick={onOpen}>
+        {unlocked ? "Перейти" : "Условия"} <ChevronRight size={17} />
       </button>
     </section>
   );
 }
 
-export function AutoEvents({ businesses, unlocked, run, reward, cooldowns, onBack, onStart, onClaim }: AutoEventsProps) {
+export function AutoEvents({ businesses, unlocked, unlockHint, run, reward, cooldowns, onBack, onStart, onClaim }: AutoEventsProps) {
   const [selectedEventId, setSelectedEventId] = useState(AUTO_EVENT_CONTESTS[0]?.id ?? "");
   const [selectedBusinessId, setSelectedBusinessId] = useState<number | null>(null);
   const [carPickerOpen, setCarPickerOpen] = useState(false);
@@ -80,7 +86,8 @@ export function AutoEvents({ businesses, unlocked, run, reward, cooldowns, onBac
           <div className="auto-event-lock-icon"><Lock size={22} /></div>
           <div>
             <div className="section-title">Автоивенты</div>
-            <strong>Откроется после открытия «Гоночных мифов»</strong>
+            <strong>Раздел пока закрыт</strong>
+            <small>{unlockHint}</small>
           </div>
         </div>
       </section>
