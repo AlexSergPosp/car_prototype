@@ -7,7 +7,7 @@ import { AdModal, LevelUnlockModal, ManagerModal, OfflineIncomeModal, VictoryMod
 import { Tabs } from "./components/Tabs";
 import { advanceAutoEvent, autoEventById, autoEventCooldownFor, autoEventStartCooldown, createAutoEventRun, tickAutoEventCooldowns } from "./autoEvents";
 import { AD_AUTO_QUIZZES, AD_DURATION_SECONDS, AD_QUIZ_BONUS, AUTO_EVENT_UNLOCK_CATEGORY, CATEGORIES, CATEGORY_UNLOCK_GOALS, COLLECT_TIME, GEM_AD_REWARD, MANAGER_COOLDOWN_SECONDS, MAX_BUSINESS_TIER, OPTIMIZATION_COSTS, PREMIUM_MANAGER_COST } from "./data";
-import { completeExpansion, createBusinessPremiumManager, createBusinesses, createManager, effectiveIncome, expansionDurationSeconds, expansionProgress, formatMoney, nextBusinessOpenCost, nextOptimizationCost, tickBusinesses, unlockDelaySeconds } from "./game";
+import { completeExpansion, createBusinessPremiumManager, createBusinesses, createManager, effectiveIncome, expansionDurationSeconds, expansionProgress, nextBusinessOpenCost, nextOptimizationCost, tickBusinesses, unlockDelaySeconds } from "./game";
 import { advanceOffline, clearProgress, loadProgress, saveProgress, type GameSnapshot } from "./save";
 import type { ActiveAd, AutoEventCooldowns, AutoEventReward, AutoEventRun, Business, ExpansionReward, Manager, OfflineIncome } from "./types";
 
@@ -73,21 +73,10 @@ export function App() {
     return victoryShown ? null : { kind: "final", ...finalGoalProgress };
   }, [finalGoalProgress, unlockedCategory, victoryShown]);
   const autoEventUnlockHint = useMemo(() => {
-    const eventCategoryName = CATEGORIES[AUTO_EVENT_UNLOCK_CATEGORY]?.name ?? "нужной категории";
-    const eventGoal = CATEGORY_UNLOCK_GOALS.find((goal) => goal.targetCategory === AUTO_EVENT_UNLOCK_CATEGORY);
-    const eventCost = eventGoal ? ` за $${formatMoney(eventGoal.cost)}` : "";
+    const eventCategoryName = CATEGORIES[AUTO_EVENT_UNLOCK_CATEGORY]?.name ?? "Гоночные мифы";
     if (unlockedCategory >= AUTO_EVENT_UNLOCK_CATEGORY) return "";
-    if (unlockingCategory === AUTO_EVENT_UNLOCK_CATEGORY) {
-      return `Откроется, когда завершится открытие «${eventCategoryName}».`;
-    }
-    if (unlockedCategory + 1 === AUTO_EVENT_UNLOCK_CATEGORY) {
-      return `Откроется после открытия «${eventCategoryName}»${eventCost}.`;
-    }
-    const nextCategoryName = CATEGORIES[unlockedCategory + 1]?.name;
-    return nextCategoryName
-      ? `Сначала открой «${nextCategoryName}», потом «${eventCategoryName}»${eventCost}.`
-      : `Откроется после открытия «${eventCategoryName}»${eventCost}.`;
-  }, [unlockedCategory, unlockingCategory]);
+    return `Открой «${eventCategoryName}».`;
+  }, [unlockedCategory]);
 
   snapshotRef.current = { soft, hard, businesses, activeCategory, unlockedCategory, selectedId, businessPageOpen, managers, managerSeed, managerCooldown, autoEventRun, autoEventReward, autoEventCooldowns, victoryShown };
 
